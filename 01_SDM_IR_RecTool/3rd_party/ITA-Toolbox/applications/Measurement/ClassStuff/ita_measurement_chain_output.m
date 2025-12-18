@@ -11,7 +11,7 @@ function varargout = ita_measurement_chain_output(varargin)
 
 %% Get ITA Toolbox preferences
 
-error(nargchk(0,1,nargin));
+narginchk(0,1);
 if nargin == 0
     varargin{1} = 1;
 end
@@ -143,8 +143,8 @@ end
 figSet.hMainFigure = hMainFigure;
 set(hMainFigure,'KeyPressFcn',@ButtonCallback)
 
-%% ITA toolbox logo
-a_im = importdata(which('ita_toolbox_logo.jpg'));
+%% ITA toolbox logo with grey background
+a_im = importdata(which('ita_toolbox_logo.png'));
 image(a_im);axis off
 set(gca,'Units','pixel', 'Position', [20 10 350 65]*0.6); %TODO: later set correctly the position
 

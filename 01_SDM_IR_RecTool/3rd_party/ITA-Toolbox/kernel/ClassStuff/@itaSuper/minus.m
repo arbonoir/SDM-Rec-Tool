@@ -6,7 +6,7 @@ function varargout = minus(varargin)
 % You can find the license for this m-file in the license.txt file in the ITA-Toolbox folder. 
 % </ITA-Toolbox>
 
-error(nargchk(2,2,nargin,'string'));
+narginchk(2,2);
 if ~isa(varargin{1},'itaSuper')
     a = -varargin{2};
     b =  varargin{1};

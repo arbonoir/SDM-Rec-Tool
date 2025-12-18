@@ -23,14 +23,11 @@ function varargout = ita_xfade_spk(varargin)
 % Author: Johannes Klein -- Email: johannes.klein@akustik.rwth-aachen.de
 % Created:  03-Mar-2009 
 
-%% Get ITA Toolbox preferences and Function String
-verboseMode  = ita_preferences('verboseMode');  % Use to show additional information for the user
-thisFuncStr  = [upper(mfilename) ':'];     % Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-error(nargchk(3,3,nargin,'string'));
+narginchk(3,3);
 sArgs        = struct('pos1_a','itaAudioFrequency', 'pos2_b','itaAudioFrequency','pos3_xfade_vec','integer');
-[a,b,xfade_vec,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[a,b,xfade_vec,sArgs] = ita_parse_arguments(sArgs,varargin); 
 
 %% check for single frequency input
 if length(xfade_vec) == 1
@@ -40,7 +37,7 @@ end
 %% Prep 
 f0  =   xfade_vec(1,1);
 if f0 >= a.samplingRate/2
-    if verboseMode, disp([thisFuncStr 'Crossfade Frequency too high, just returning input A.'])
+    if ita_verbose_info('Crossfade Frequency too high, just returning input A.', 1)
         varargout(1) = {a};
         return;
     end
@@ -52,7 +49,7 @@ fsb     =   b.samplingRate;
 
 if fsa~=fsb
     %% TODO: Resample
-    error([thisFuncStr ': Not the same samplerate']);
+    error('Not the same samplerate');
 else
     fs  =   fsa; %Samplingrate
 end

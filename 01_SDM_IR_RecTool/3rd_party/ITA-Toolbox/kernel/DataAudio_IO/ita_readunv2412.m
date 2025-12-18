@@ -24,7 +24,7 @@ function varargout = ita_readunv2412(varargin)
 thisFuncStr  = [upper(mfilename) ':'];     % Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 sArgs        = struct('pos1_unvFilename','anything');
 [unvFilename,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
 

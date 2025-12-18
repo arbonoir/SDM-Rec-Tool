@@ -27,9 +27,9 @@ verboseMode  = ita_preferences('verboseMode');  %#ok<NASGU> Use to show addition
 thisFuncStr  = [upper(mfilename) ':'];     %#ok<NASGU> Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-error(nargchk(2,2,nargin,'string'));
+narginchk(2,2);
 sArgs        = struct('pos1_data','itaAudioTime','pos2_alpha','int');
-[data,alpha,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[data,alpha,sArgs] = ita_parse_arguments(sArgs,varargin);
 
 %% Pitch Shifting
 result = data;

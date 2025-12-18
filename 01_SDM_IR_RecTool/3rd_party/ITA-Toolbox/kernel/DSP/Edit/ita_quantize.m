@@ -36,7 +36,7 @@ thisFuncStr  = [upper(mfilename) ':'];     % Use to show warnings or infos in th
 sArgs        = struct('pos1_data','itaAudioTime','bits',24,'intervalls',[]);
 
 %% Initialization and Input Parsing
-error(nargchk(1,5,nargin,'string'));
+narginchk(1,5);
 
 [data,sArgs] = ita_parse_arguments(sArgs,varargin);
 

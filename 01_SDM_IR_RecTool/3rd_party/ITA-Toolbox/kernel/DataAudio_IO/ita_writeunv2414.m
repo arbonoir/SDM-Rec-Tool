@@ -35,7 +35,7 @@ function ita_writeunv2414(varargin)
 
 %% Initialization
 % Number of Input Arguments
-error(nargchk(2,4,nargin,'string'));
+narginchk(2,4);
 sArgs        = struct('pos1_data','itaSuper','pos2_unvFilename','string','action','replace');
 [Data,unvFilename,sArgs] = ita_parse_arguments(sArgs,varargin);
 

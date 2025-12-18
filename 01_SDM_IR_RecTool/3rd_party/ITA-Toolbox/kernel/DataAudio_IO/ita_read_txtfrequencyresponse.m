@@ -32,7 +32,7 @@ function varargout = ita_read_txtfrequencyresponse (varargin)
 
 
 
-error(nargchk(1,7,nargin,'string'));
+narginchk(1,7);
 
 [textFile,samplingRate,nSamples, normalization]=parseinput(varargin);
 

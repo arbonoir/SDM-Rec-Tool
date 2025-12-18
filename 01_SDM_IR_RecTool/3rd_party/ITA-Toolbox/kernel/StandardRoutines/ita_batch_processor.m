@@ -38,7 +38,7 @@ function ita_batch_processor(varargin)
 thisFuncStr  = [upper(mfilename) ':'];          %Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-error(nargchk(0,10,nargin,'string'));
+narginchk(0,10);
 
 if nargin == 0
    ita_batch_processor_GUI(); 

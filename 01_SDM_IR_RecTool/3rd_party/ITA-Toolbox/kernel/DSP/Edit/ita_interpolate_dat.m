@@ -30,9 +30,9 @@ function [ varargout ] = ita_interpolate_dat( varargin )
 verboseMode  = ita_preferences('verboseMode');
 
 %% Initialization and Input Parsing
-error(nargchk(1,2,nargin,'string'));
+narginchk(1,2);
 sArgs           = struct('pos1_a','itaSuper');
-[Data, sArgs]   = ita_parse_arguments(sArgs,{varargin{1}}); %#ok<NASGU>
+[Data, sArgs]   = ita_parse_arguments(sArgs,{varargin{1}}); 
 
 if nargin == 1
     NewSamplingRate = 44100;

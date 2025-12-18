@@ -57,20 +57,28 @@ if max(intersectionTime.freqData / ir.trackLength) > 0.85
     ita_verbose_info('longer excitation signal needed !?!')
 end
 
+% [~, shiftTime] = ita_time_shift(ir, '30db');
+
 irWin = itaAudio(nChannels,1);
 for iCh = 1:nChannels
+    
+    
+%     irWin(iCh) = ita_time_window(ir.ch(iCh), -shiftTime(iCh) *[1 0.95 ] , 'time');
     
     if ~isnan(intersectionTime.freqData(iCh))
         irWin(iCh) = ita_time_window(ir.ch(iCh), intersectionTime.freqData(iCh) *[1.05 1 ] , 'time');
     else
         irWin(iCh) = ir.ch(iCh) * nan;
     end
-end
-irWin = irWin.merge;
 
+end
+    
+% irWin = ir -  irWin.merge; % take only the noise part
+ irWin = irWin.merge; 
 
 % convolve with excitation to get original disrupter
 noiseInExcitation = irWin * excitation;
+
 
 % first approach: simple threshold for peak to rms ratio
 peakRmsRatio = 20*log10(max(noiseInExcitation.timeData) ./ noiseInExcitation.rms);
@@ -104,3 +112,8 @@ end
 if nargout >= 3
     varargout{3} = noiseInExcitation;
 end
+
+if nargout >= 4
+    varargout{4} = irWin;
+end
+

@@ -919,7 +919,7 @@ if ~isNative
         dat.Data = dat.Data/(2^23);     % [-1,1)
     elseif BytesPerSample==4,
         if wavefmt.wFormatTag ~= 3,    % Type 3 32-bit is already normalized
-            dat.Data = dat.Data/32768; % [-1,1)
+            dat.Data = dat.Data/(2^31);  % [-1,1)
         end
     end
 end

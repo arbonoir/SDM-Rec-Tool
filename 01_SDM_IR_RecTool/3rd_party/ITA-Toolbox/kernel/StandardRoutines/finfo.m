@@ -1,8 +1,8 @@
 function [fileType, openAction, loadAction, description] = finfo(varargin)
 
 % <ITA-Toolbox>
-% This file is part of the ITA-Toolbox. Some rights reserved. 
-% You can find the license for this m-file in the license.txt file in the ITA-Toolbox folder. 
+% This file is part of the ITA-Toolbox. Some rights reserved.
+% You can find the license for this m-file in the license.txt file in the ITA-Toolbox folder.
 % </ITA-Toolbox>
 
 
@@ -39,7 +39,7 @@ if isempty(extensionMap)
 end
 
 %% If file is a readable audio file, call ita_read
-[junk,junk,fileType] = fileparts(varargin{1});
+[~,~,fileType] = fileparts(varargin{1});
 if any(strcmpi(fileType, extensionMap(:,1))) || ...   % ita read files
         any(strcmpi(['.' fileType], extensionMap(:,1)))
     openAction = 'ita_read_doubleclick';
@@ -52,5 +52,6 @@ else
     cd(path)
     [fileType, openAction, loadAction, description] = finfo(filename,varargin{2:end});
     cd(oldPath)
+end
 end
 

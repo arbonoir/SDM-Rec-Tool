@@ -1,19 +1,19 @@
 /** @file patest_wire.c
-	@ingroup test_src
-	@brief Pass input directly to output.
+    @ingroup test_src
+    @brief Pass input directly to output.
 
-	Note that some HW devices, for example many ISA audio cards
-	on PCs, do NOT support full duplex! For a PC, you normally need
-	a PCI based audio card such as the SBLive.
+    Note that some HW devices, for example many ISA audio cards
+    on PCs, do NOT support full duplex! For a PC, you normally need
+    a PCI based audio card such as the SBLive.
 
-	@author Phil Burk  http://www.softsynth.com
-    
+    @author Phil Burk  http://www.softsynth.com
+
  While adapting to V19-API, I excluded configs with framesPerCallback=0
  because of an assert in file pa_common/pa_process.c. Pieter, Oct 9, 2003.
 
 */
 /*
- * $Id: patest_wire.c 1368 2008-03-01 00:38:27Z rossb $
+ * $Id$
  *
  * This program uses the PortAudio Portable Audio Library.
  * For more information see: http://www.portaudio.com
@@ -40,13 +40,13 @@
  */
 
 /*
- * The text above constitutes the entire PortAudio license; however, 
+ * The text above constitutes the entire PortAudio license; however,
  * the PortAudio community also makes the following non-binding requests:
  *
  * Any person wishing to distribute modifications to the Software is
  * requested to send the modifications to the original developer so that
- * they can be incorporated into the canonical version. It is also 
- * requested that these non-binding requests be included along with the 
+ * they can be incorporated into the canonical version. It is also
+ * requested that these non-binding requests be included along with the
  * license above.
  */
 
@@ -58,11 +58,20 @@
 
 typedef struct WireConfig_s
 {
+    PaDeviceIndex inputDevice;
+    PaDeviceIndex outputDevice;
     int isInputInterleaved;
     int isOutputInterleaved;
     int numInputChannels;
     int numOutputChannels;
     int framesPerCallback;
+    /* count status flags */
+    int numInputUnderflows;
+    int numInputOverflows;
+    int numOutputUnderflows;
+    int numOutputOverflows;
+    int numPrimingOutputs;
+    int numCallbacks;
 } WireConfig_t;
 
 #define USE_FLOAT_INPUT        (1)
@@ -124,6 +133,14 @@ static int wireCallback( const void *inputBuffer, void *outputBuffer,
     /* This may get called with NULL inputBuffer during initial setup. */
     if( inputBuffer == NULL) return 0;
 
+    /* Count flags */
+    if( (statusFlags & paInputUnderflow) != 0 ) config->numInputUnderflows += 1;
+    if( (statusFlags & paInputOverflow) != 0 ) config->numInputOverflows += 1;
+    if( (statusFlags & paOutputUnderflow) != 0 ) config->numOutputUnderflows += 1;
+    if( (statusFlags & paOutputOverflow) != 0 ) config->numOutputOverflows += 1;
+    if( (statusFlags & paPrimingOutput) != 0 ) config->numPrimingOutputs += 1;
+    config->numCallbacks += 1;
+
     inChannel=0, outChannel=0;
     while( !(inDone && outDone) )
     {
@@ -171,16 +188,48 @@ int main(void)
     PaError err = paNoError;
     WireConfig_t CONFIG;
     WireConfig_t *config = &CONFIG;
-    int configIndex = 0;;
+    int configIndex = 0;
+    int maxInputChannels = 0;
+    int maxOutputChannels = 0;
 
     err = Pa_Initialize();
     if( err != paNoError ) goto error;
 
+    /* NOTE: INPUT/OUTPUT_DEVICE macros may use PaGetDefault...Device(), so call after Pa_Initialze() */
+    config->inputDevice = INPUT_DEVICE;
+    if (config->inputDevice == paNoDevice) {
+        fprintf(stderr,"Error: No default input device.\n");
+        goto done;
+    }
+
+    config->outputDevice = OUTPUT_DEVICE;
+    if (config->outputDevice == paNoDevice) {
+        fprintf(stderr,"Error: No default output device.\n");
+        goto done;
+    }
+
     printf("Please connect audio signal to input and listen for it on output!\n");
     printf("input format = %lu\n", INPUT_FORMAT );
     printf("output format = %lu\n", OUTPUT_FORMAT );
-    printf("input device ID  = %d\n", INPUT_DEVICE );
-    printf("output device ID = %d\n", OUTPUT_DEVICE );
+    printf("input device ID  = %d\n", config->inputDevice );
+    printf("output device ID = %d\n", config->outputDevice );
+
+    /* Determine the maximum number of channels supported by each device. */
+    maxInputChannels = Pa_GetDeviceInfo(config->inputDevice)->maxInputChannels;
+    printf("maxInputChannels = %d\n", maxInputChannels );
+
+    maxOutputChannels = Pa_GetDeviceInfo(config->outputDevice)->maxOutputChannels;
+    printf("maxOutputChannels = %d\n", maxOutputChannels );
+
+    if (maxInputChannels < 1) {
+        fprintf(stderr,"Error: device has no input channels. At least one channel required for full-duplex test.\n");
+        goto done;
+    }
+
+    if (maxOutputChannels < 1) {
+        fprintf(stderr,"Error: device has no output channels. At least one channel required for full-duplex test.\n");
+        goto done;
+    }
 
     if( INPUT_FORMAT == OUTPUT_FORMAT )
     {
@@ -199,12 +248,18 @@ int main(void)
     {
         for( config->isOutputInterleaved = 0; config->isOutputInterleaved < 2; config->isOutputInterleaved++ )
         {
-            for( config->numInputChannels = 1; config->numInputChannels < 3; config->numInputChannels++ )
+            for( config->numInputChannels = 1;
+                    config->numInputChannels <= maxInputChannels;
+                    config->numInputChannels++ )
             {
-                for( config->numOutputChannels = 1; config->numOutputChannels < 3; config->numOutputChannels++ )
+                for( config->numOutputChannels = 1;
+                        config->numOutputChannels <= maxOutputChannels;
+                        config->numOutputChannels++ )
                 {
                            /* If framesPerCallback = 0, assertion fails in file pa_common/pa_process.c, line 1413: EX. */
-                    for( config->framesPerCallback = 64; config->framesPerCallback < 129; config->framesPerCallback += 64 )
+                    for( config->framesPerCallback = 64;
+                            config->framesPerCallback < 129;
+                            config->framesPerCallback += 64 )
                     {
                         printf("-----------------------------------------------\n" );
                         printf("Configuration #%d\n", configIndex++ );
@@ -217,7 +272,7 @@ int main(void)
                         }
                         else if( err != paNoError ) goto error;
                     }
-               }
+                }
             }
         }
     }
@@ -231,7 +286,7 @@ done:
 
 error:
     Pa_Terminate();
-    fprintf( stderr, "An error occured while using the portaudio stream\n" );
+    fprintf( stderr, "An error occurred while using the portaudio stream\n" );
     fprintf( stderr, "Error number: %d\n", err );
     fprintf( stderr, "Error message: %s\n", Pa_GetErrorText( err ) );
     printf("Hit ENTER to quit.\n");  fflush(stdout);
@@ -245,32 +300,31 @@ static PaError TestConfiguration( WireConfig_t *config )
     PaError err = paNoError;
     PaStream *stream;
     PaStreamParameters inputParameters, outputParameters;
-    
+
     printf("input %sinterleaved!\n", (config->isInputInterleaved ? " " : "NOT ") );
     printf("output %sinterleaved!\n", (config->isOutputInterleaved ? " " : "NOT ") );
     printf("input channels = %d\n", config->numInputChannels );
     printf("output channels = %d\n", config->numOutputChannels );
     printf("framesPerCallback = %d\n", config->framesPerCallback );
 
-    inputParameters.device = INPUT_DEVICE;              /* default input device */
-    if (inputParameters.device == paNoDevice) {
-        fprintf(stderr,"Error: No default input device.\n");
-        goto error;
-    }
+    inputParameters.device = config->inputDevice;
     inputParameters.channelCount = config->numInputChannels;
     inputParameters.sampleFormat = INPUT_FORMAT | (config->isInputInterleaved ? 0 : paNonInterleaved);
     inputParameters.suggestedLatency = Pa_GetDeviceInfo( inputParameters.device )->defaultLowInputLatency;
     inputParameters.hostApiSpecificStreamInfo = NULL;
 
-    outputParameters.device = OUTPUT_DEVICE;            /* default output device */
-    if (outputParameters.device == paNoDevice) {
-        fprintf(stderr,"Error: No default output device.\n");
-        goto error;
-    }
+    outputParameters.device = config->outputDevice;
     outputParameters.channelCount = config->numOutputChannels;
     outputParameters.sampleFormat = OUTPUT_FORMAT | (config->isOutputInterleaved ? 0 : paNonInterleaved);
     outputParameters.suggestedLatency = Pa_GetDeviceInfo( outputParameters.device )->defaultLowOutputLatency;
     outputParameters.hostApiSpecificStreamInfo = NULL;
+
+    config->numInputUnderflows = 0;
+    config->numInputOverflows = 0;
+    config->numOutputUnderflows = 0;
+    config->numOutputOverflows = 0;
+    config->numPrimingOutputs = 0;
+    config->numCallbacks = 0;
 
     err = Pa_OpenStream(
               &stream,
@@ -282,16 +336,25 @@ static PaError TestConfiguration( WireConfig_t *config )
               wireCallback,
               config );
     if( err != paNoError ) goto error;
-    
+
     err = Pa_StartStream( stream );
     if( err != paNoError ) goto error;
-    
-    printf("Hit ENTER for next configuration, or 'q' to quit.\n");  fflush(stdout);
+
+    printf("Now recording and playing. - Hit ENTER for next configuration, or 'q' to quit.\n");  fflush(stdout);
     c = getchar();
-    
+
     printf("Closing stream.\n");
     err = Pa_CloseStream( stream );
     if( err != paNoError ) goto error;
+
+#define CHECK_FLAG_COUNT(member) \
+    if( config->member > 0 ) printf("FLAGS SET: " #member " = %d\n", config->member );
+    CHECK_FLAG_COUNT( numInputUnderflows );
+    CHECK_FLAG_COUNT( numInputOverflows );
+    CHECK_FLAG_COUNT( numOutputUnderflows );
+    CHECK_FLAG_COUNT( numOutputOverflows );
+    CHECK_FLAG_COUNT( numPrimingOutputs );
+    printf("number of callbacks = %d\n", config->numCallbacks );
 
     if( c == 'q' ) return 1;
 

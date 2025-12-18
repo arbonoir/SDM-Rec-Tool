@@ -24,7 +24,7 @@ function folderInfo = ita_check4polardata(varargin)
 
 %% Initialization
 % Number of Input Arguments
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 
 %% make a cell array
 if iscell(varargin{1})

@@ -9,7 +9,7 @@ function out = ita_guisupport_removewhitespaces(varargin)
 % </ITA-Toolbox>
 
 
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 out = varargin{1};
 if iscell(out)
     for idx = 1:numel(out)

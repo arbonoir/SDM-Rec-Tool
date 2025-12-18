@@ -22,8 +22,8 @@ function varargout = ita_get_value(varargin)
 
 %% Initialization
 % Number of Input Arguments
-error(nargchk(1,2,nargin,'string'));
-thisFuncStr  = [upper(mfilename) ':'];     %#ok<NASGU> Use to show warnings or infos in this functions
+narginchk(1,2);
+thisFuncStr  = [upper(mfilename) ':'];   %  %#ok<NASGU> Use to show warnings or infos in this functions
 
 % Find Audio Data
 data = varargin{1}.';

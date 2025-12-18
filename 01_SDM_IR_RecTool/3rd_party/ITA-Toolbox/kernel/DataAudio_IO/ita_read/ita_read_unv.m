@@ -36,9 +36,9 @@ verboseMode  = ita_preferences('verboseMode');  %#ok<NASGU> Use to show addition
 thisFuncStr  = [upper(mfilename) ':'];     % Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-error(nargchk(1,9,nargin,'string'));
+narginchk(1,9);
 sArgs = struct('pos1_unvFilename','string','interval',[],'isTime',false,'channels',[],'metadata',false);
-[unvFilename,sArgs] = ita_parse_arguments(sArgs,varargin);  %#ok<NASGU>
+[unvFilename,sArgs] = ita_parse_arguments(sArgs,varargin);  
 
 %%
 [UffDataSets, Info] = readuff(unvFilename, 'InfoOnly'); %#ok<ASGLU>

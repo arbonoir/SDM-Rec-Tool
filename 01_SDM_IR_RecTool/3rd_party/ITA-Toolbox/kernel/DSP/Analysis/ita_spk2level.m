@@ -35,12 +35,12 @@ thisFuncStr  = [upper(mfilename) ':'];
 warning([thisFuncStr ' please check me!']);
 
 %% Initialization and Input Parsing
-error(nargchk(1,5,nargin))
+narginchk(1,5)
 
 %find audio data
 sArgs   = struct('pos1_data','itaAudioFrequency','pos2_fraction','integer',...
                  'pos3_method','anything');
-[data, fraction, method, sArgs] = ita_parse_arguments(sArgs,varargin(1:3)); %#ok<NASGU>
+[data, fraction, method, sArgs] = ita_parse_arguments(sArgs,varargin(1:3)); 
 
 if nargin<5
     order = 6;

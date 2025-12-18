@@ -174,7 +174,12 @@ if sArgs.linfreq %pdi: linear frequency plotting
 else
     set(sArgs.axes_handle,'XScale','log');
 end
-axh = get(fgh,'CurrentAxes');
+
+if isempty(sArgs.axes_handle)
+    axh = get(fgh,'CurrentAxes');
+else
+    axh = sArgs.axes_handle;
+end
 setappdata(axh,'ChannelHandles',lnh);
 
 %% call help function
@@ -195,6 +200,8 @@ sArgs.xLabel     = 'Frequency in Hz';
 sArgs.yLabel     = 'Modulus';
 sArgs.figureName = 'Frequency Domain';
 sArgs.data       = data; %used for domain entries in gui
+sArgs.ita_domain = 'frequency';
+setappdata(fgh,'ita_domain', 'frequency');
 [fgh,axh] = ita_plottools_figurepreparations(data,fgh,axh,lnh,'options',sArgs);
 
 %% Return the figure handle

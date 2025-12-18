@@ -5,8 +5,11 @@ function ita_menucallback_RemoveChannelSettings(hObject, event)
 % You can find the license for this m-file in the license.txt file in the ITA-Toolbox folder. 
 % </ITA-Toolbox>
 
-result = ita_getfrombase();
-result.header = ita_metainfo_rm_channelsettings(result,'all');
-ita_setinbase(ita_inuse,result);
-ita_getfrombase;
+
+fgh        = ita_guisupport_getParentFigure(hObject);
+audioObj = getappdata(fgh, 'audioObj');
+result = ita_metainfo_rm_channelsettings(audioObj,'all');
+setappdata(fgh, 'audioObj', result);
+ita_guisupport_updateGUI(fgh);
+
 end

@@ -86,19 +86,11 @@ result.freqVector       = psdfreqvec('npts',fftSize,'Fs',input.samplingRate,'Ran
 result.timeVector       = ((1:outputSize(2))-1)* (fftSize-nOverlap)/input.samplingRate + fftSize / 2 / input.samplingRate;
 
 
-
-% sample use of the ita warning/ informing function
-% ita_verbose_info([thisFuncStr 'Testwarning'],0);
-
-
-%% Add history line
-% input = ita_metainfo_add_historyline(input,mfilename,varargin);
-
 %% Set Output
 if nargout == 0
 %     fgh = figure;
-    [del idxMin ] = min(abs(result.freqVector - sArgs.plotFreqRange(1)));
-    [del idxMax ] = min(abs(result.freqVector - sArgs.plotFreqRange(2)));
+    [~, idxMin ] = min(abs(result.freqVector - sArgs.plotFreqRange(1)));
+    [~, idxMax ] = min(abs(result.freqVector - sArgs.plotFreqRange(2)));
     plotData = 20*log10(abs(result.data(idxMin:idxMax, : )))-20*log10(2e-5);
     pcolor(result.timeVector, result.freqVector(idxMin:idxMax), plotData);
     set(gca, 'YScale', 'log'); % TODO: besser nicht gca

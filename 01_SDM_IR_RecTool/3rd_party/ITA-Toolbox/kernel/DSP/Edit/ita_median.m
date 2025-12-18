@@ -23,9 +23,9 @@ function varargout = ita_median(varargin)
 thisFuncStr  = [upper(mfilename) ':'];     
 
 %% Initialization and Input Parsing
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 sArgs           = struct('pos1_a','itaAudioFrequency');
-[result, sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[result, sArgs] = ita_parse_arguments(sArgs,varargin); 
 
 %%
 ita_verbose_info([thisFuncStr 'Please be careful with this implementation!'],1)

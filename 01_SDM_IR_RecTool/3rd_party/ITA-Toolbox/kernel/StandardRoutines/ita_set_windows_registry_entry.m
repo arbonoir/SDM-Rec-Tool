@@ -24,7 +24,7 @@ function ita_set_windows_registry_entry(varargin)
 
 %% Initialization
 % Number of Input Arguments
-error(nargchk(0,0,nargin,'string'));
+narginchk(0,0);
 if ~ispc
     disp('this only works for Windows Systems.')
     return;

@@ -1,4 +1,4 @@
-function ita_plot_polar(varargin)
+function lineHandle = ita_plot_polar(varargin)
 %ITA_PLOT_POLAR - plot a polar pattern, linear or in dB
 %  This function plots the polar pattern using the dirplot routine which
 %  extends the matlab polar routine to enable negative values in polar
@@ -9,16 +9,18 @@ function ita_plot_polar(varargin)
 %   ita_plot_polar(itaSuper, double, options)
 %
 %   Options (default):
-%           'plotDomain' ('freq')   : in which domain to plot
-%           'plotPlane' ('xy')      : cut through a plane from spherical data
-%           'plotType' ('mag')      : how to plot the data (linear,mag,phase)
-%           'plotRange' ([])        : dynamic range of the plot
-%           'plotCoord' ('polar')   : define plot type
-%                                     'polar' -> polar coordinates
-%                                     'cart'  -> Cartesian coordinates
-%           'newFigure' (true)      : whether to open a new figure
-%           'hold' (false)          : plot multiple lines in one graph
-%           'normalize' (false)     : set maximum to 0 dB (linear 1)
+%           'plotDomain' ('freq')      : in which domain to plot
+%           'plotPlane' ('xy')         : cut through a plane from spherical data
+%           'plotType' ('mag')         : how to plot the data (linear,mag,phase)
+%           'plotRange' ([])           : dynamic range of the plot
+%           'plotCoord' ('polar')      : define plot type
+%                                        'polar' -> polar coordinates
+%                                        'cart'  -> Cartesian coordinates
+%           'newFigure' (true)         : whether to open a new figure
+%           'normalize' (false)        : set maximum to 0 dB (linear 1)
+%           'plotFunction'('polarplot'): use matlab function 'polarplot' or
+%                                        old ita-function  'dirplot' for
+%                                        polar plots
 %
 %  Example:
 %   audioObjOut = ita_plot_polar(audioObjIn)
@@ -47,8 +49,20 @@ function ita_plot_polar(varargin)
 thisFuncStr  = [upper(mfilename) ':'];     %Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-sArgs        = struct('pos1_data','itaSuper','pos2_plotInstant','double', 'plotDomain','freq', 'plotPlane', 'xy', 'plotType', 'mag', 'plotRange',[],'plotCoord', 'polar','newFigure', true, 'hold', false, 'normalize',false,'nTicks',5);
-[input,plotInstant,sArgs] = ita_parse_arguments(sArgs,varargin); 
+sArgs                       = struct('pos1_data',        'itaSuper',...
+                                     'pos2_plotInstant', 'double',  ...
+                                     'plotDomain',       'freq',    ...
+                                     'plotPlane',        'xy',      ...
+                                     'plotType',         'mag',     ...
+                                     'plotRange',        [],        ...
+                                     'plotCoord',        'polar',   ...
+                                     'newFigure',        true,      ...
+                                     'normalize',        false,     ...
+                                     'nTicks',           5,         ...
+                                     'lineStyle',        '-',       ...
+                                     'plotFunction',     'polarplot',...
+                                     'clipData',         false);
+[input,frequencyPlot,sArgs] = ita_parse_arguments(sArgs,varargin);
 
 %% input data processing
 if isempty(input.channelCoordinates) && ~any(isnan(input.channelCoordinates.theta))
@@ -64,7 +78,7 @@ if numel(uniqueUnits) > 1
     uniqueUnits = uniqueUnits(1);
 end
 
-[refStr,refValue,refLogPrefix] = itaValue.log_reference(uniqueUnits);
+[refStr, refValue, refLogPrefix] = itaValue.log_reference(uniqueUnits);
 if isnan(thetaRes) || thetaRes == 0
     thetaRes = 1;
 end
@@ -76,62 +90,63 @@ switch lower(sArgs.plotPlane)
     % find the correct cut through the sphere
     case 'xy'
         % means theta = 90
-        thetaVal = 90;
-        phiVal = [];
-        signVals = 1;
+        thetaVal    = 90;
+        phiVal      = [];
+        signVals    = 1;
     case 'yz'
-        thetaVal = [];
-        phiVal = [90,270];
-        signVals = [1, -1];
+        thetaVal    = [];
+        phiVal      = [90,270];
+        signVals    = [1, -1];
     case 'xz'
-        thetaVal = [];
-        phiVal = [0,180];
-        signVals = [1, -1];
+        thetaVal    = [];
+        phiVal      = [0,180];
+        signVals    = [1, -1];
     otherwise
         error([thisFuncStr 'unknown plot type']);
 end
 
-tmpData = eval(['input.' sArgs.plotDomain '2value(' num2str(plotInstant) ');']);
-angles = [];
-plotData = [];
+tmpFreqData     = eval(['input.' sArgs.plotDomain '2value(' num2str(frequencyPlot) ');']);
+angles          = [];
+plotData        = [];
+
+% Extract data and angles to plot.
 % only one can be empty
 if ~isempty(thetaVal)
     for iTheta = 1:numel(thetaVal)
-        ids = find(abs(theta - thetaVal(iTheta)) <= thetaRes*0.4);
-        if ~isempty(ids)
-            [tmpAngles,sortIdx] = sort(input.channelCoordinates.phi_deg(ids));
-            angles = [angles; tmpAngles.*signVals(iTheta)]; %#ok<AGROW>
-            tmp = tmpData(ids);
-            plotData = [plotData, tmp(sortIdx)]; %#ok<AGROW>
+        idxPlotData = find(abs(theta - thetaVal(iTheta)) <= thetaRes*0.4);
+        if ~isempty(idxPlotData)
+            [tmpAngles,idxAngles] = sort(mod(input.channelCoordinates.phi_deg(idxPlotData),360));
+            angles                = [angles; tmpAngles.*signVals(iTheta)]; %#ok<AGROW>
+            tmp                   = tmpFreqData(idxPlotData);
+            plotData              = [plotData, tmp(idxAngles)]; %#ok<AGROW>
         else
             error([thisFuncStr 'no appropriate values found, could not create plot']);
         end
-        angles(angles > 180) = mod(angles(angles > 180),180) - 180;  %#ok<AGROW>
+        angles(angles > 180) = mod(angles(angles > 180),180) - 180;  
     end
 else
     for iPhi = 1:numel(phiVal)
-        ids = find(abs(phi - phiVal(iPhi)) <= phiRes*0.4);
-        if ~isempty(ids)
-            [tmpAngles,sortIdx] = sort(input.channelCoordinates.theta_deg(ids));
-            angles = [angles; tmpAngles.*signVals(iPhi)]; %#ok<AGROW>
-            tmp = tmpData(ids);
-            plotData = [plotData, tmp(sortIdx)]; %#ok<AGROW>
+        idxPlotData = find(abs(phi - phiVal(iPhi)) <= phiRes*0.4); %jtu: magic number 0.4?
+        if ~isempty(idxPlotData)
+            [tmpAngles,idxAngles]  = sort(input.channelCoordinates.theta_deg(idxPlotData));
+            angles                 = [angles; tmpAngles.*signVals(iPhi)]; %#ok<AGROW>
+            tmp                    = tmpFreqData(idxPlotData);
+            plotData               = [plotData, tmp(idxAngles)]; %#ok<AGROW>
         else
             error([thisFuncStr 'no appropriate values found, could not create plot']);
         end
     end
 end
 
-
-
-[angles,sortIdx] = sort(angles);
-plotData = plotData(sortIdx);
+[angles,idxAngles] = sort(angles);
+plotData           = plotData(idxAngles);
 % in order to get gapless data
-angles = [angles(:); angles(1)];
-plotData = [plotData(:); plotData(1)];
+angles             = [angles(:); angles(1)];
+plotData           = [plotData(:); plotData(1)];
 
+% Prepare plotdata for
 if strcmpi(sArgs.plotDomain,'freq')
-    if strcmpi(sArgs.plotType,'mag')
+    if strcmpi(sArgs.plotType,   'mag')
         yTitle = 'dB';
         if sArgs.normalize
             plotData = plotData./max(abs(plotData(:)));
@@ -147,103 +162,112 @@ if strcmpi(sArgs.plotDomain,'freq')
         if sArgs.normalize
             plotData = plotData./max(abs(plotData(:)));
         else
-            yTitle = uniqueUnits{1};
+            yTitle   = uniqueUnits{1};
         end
         if ~all(isreal(plotData))
             ita_verbose_info('values are complex => plotting absolute value',0)
             plotData = abs(plotData);
         end
-    else strcmpi(sArgs.plotType,'phase')
-        yTitle = 'deg';
-        plotData = unwrap(angle(plotData)).*180/pi;
+    elseif strcmpi(sArgs.plotType,'phase')
+        yTitle    = 'deg';
+        plotData  = unwrap(angle(plotData)).*180/pi;
         if sArgs.normalize
             plotData = plotData - max(plotData);
         end
     end
 end
-
 if ~all(isreal(plotData))
     plotData = abs(plotData);
 end
 
 %% plot it
-if (strcmpi(sArgs.plotCoord,'polar'))
-    if sArgs.newFigure && ~sArgs.hold
-        figure('Name','Polar plot');
+if sArgs.newFigure
+   figure('Name','Polar plot');
+end
+% Determine Plot Range
+if isempty(sArgs.plotRange)
+    maxVal = max(plotData(:));
+    minVal = min(plotData(:));
+    if strcmpi(sArgs.plotType,'mag') %if mag and no plotRange given, find a suitable one
+        maxVal = ceil(maxVal*0.2)*5;
+        minVal = floor(minVal*0.2)*5;
     end
-
-    if isempty(sArgs.plotRange)
-        maxVal = max(plotData(:));
-        minVal = min(plotData(:));
-        if strcmpi(sArgs.plotType,'mag') %if mag and no plotRange given, find a suitable one
-            maxVal = ceil(maxVal*0.2)*5;
-            minVal = floor(minVal*0.2)*5;
-        end
-    else
-        maxVal = max(sArgs.plotRange);
-        minVal = min(sArgs.plotRange);
+else
+    maxVal = max(sArgs.plotRange);
+    minVal = min(sArgs.plotRange);
+    if sArgs.clipData
+        plotData(plotData<minVal) = minVal;
+        plotData(plotData>maxVal) = maxVal;
     end
+end
 
-    if sArgs.hold
-        hold all;
+if (strcmpi(sArgs.plotCoord, 'polar'))
+    switch sArgs.plotFunction
+        case 'polarplot'
+            %polarplot reflects negative values at the origin, to get
+            %better match for db data with a ring a zero line, offset data
+            %accordingly
+            
+            %first update all plots to new limits if there are any
+            existingLineHandles = findall(gca,'type','line');
+            if ~isempty(existingLineHandles)
+                %get values before update
+                currTickLabels = str2num(get(gca,'RTickLabel'));
+                currTick = get(gca,'RTick');
+                currRLim = get(gca,'RLim');
+                minVal = min(minVal,min(currTickLabels));
+                maxVal = max(maxVal,max(currTickLabels));
+                
+                if sign(maxVal)*sign(minVal)<0
+                    %data contains 0
+                    
+                end
+                
+                existingLineHandles = findall(gca,'type','line');
+                for iExistingLine = 1:numel(existingLineHandles)
+                    existingLineHandles(iExistingLine).RData = existingLineHandles(iExistingLine).RData+currTickLabels(1)-currTick(1)-minVal;
+                end
+            end
+            
+            %make new plots
+            lineHandle = polarplot(deg2rad(angles(:)),plotData(:)-minVal);
+            
+            %update Ticks to allow negative ticks
+            rTicks = round(linspace(minVal,maxVal,sArgs.nTicks)-minVal);
+            if sign(maxVal)*sign(minVal)<0
+                %data contains 0
+                offset = rTicks(min(abs(rTicks+minVal)) == abs(rTicks+minVal))+minVal;
+                rTicks = rTicks-offset;
+            end
+            set(gca,'RTick',rTicks,...
+                'RTickLabel',rTicks+minVal,...
+                'RLim',[minVal,maxVal]-minVal)
+            
+        
+        case 'dirplot'
+        lineHandle = dirplot(angles(:),plotData(:),sArgs.lineStyle,[double(maxVal) double(minVal) sArgs.nTicks],yTitle);
+        otherwise
+            error('unknown ''plotFunction'' parameter. Use ''polarplot'' or ''dirplot''!')
     end
-    lineHandle = dirplot(angles(:),plotData(:),'auto',[double(maxVal) double(minVal) sArgs.nTicks],yTitle);
-    set(lineHandle,'LineWidth',ita_preferences('linewidth'));
-
-    if sArgs.hold
-        hold off;
-    end
-
-    if strcmpi(sArgs.plotDomain,'freq')
-        unitStr = 'Hz';
-    else
-        unitStr = 's';
-    end
-    title(['Polar pattern at ' num2str(plotInstant) ' ' unitStr]);
-
+    
+    
 elseif (strcmpi(sArgs.plotCoord,'cart'))
-    if sArgs.newFigure && ~sArgs.hold
-        figure('Name','Polar plot');
-    end
-
-    if isempty(sArgs.plotRange)
-        maxVal = max(plotData(:));
-        minVal = min(plotData(:));
-        if strcmpi(sArgs.plotType,'mag') %if mag and no plotRange given, find a suitable one
-            maxVal = ceil(maxVal*0.2)*5;
-            minVal = floor(minVal*0.2)*5;
-        end
-    else
-        maxVal = max(sArgs.plotRange);
-        minVal = min(sArgs.plotRange);
-    end
-
-    if sArgs.hold
-        hold all;
-    end
-    lineHandle = plot(angles(:),plotData(:));
+    lineHandle = plot(angles(:),plotData(:),sArgs.lineStyle);
     set(gca,...
         'YLim', [minVal maxVal],...
         'XTick', -180:30:180,...
         'YTick', minVal:(abs(minVal)+abs(maxVal))/sArgs.nTicks:maxVal)
-          %  'XLim', [-180 180],...
+    %  'XLim', [-180 180],...
     xlabel('Degrees')
- 
-    set(lineHandle,'LineWidth',ita_preferences('linewidth'));
-
-    if sArgs.hold
-        hold off;
-    end
-
-    if strcmpi(sArgs.plotDomain,'freq')
-        unitStr = 'Hz';
-    else
-        unitStr = 's';
-    end
-    title(['Polar pattern at ' num2str(plotInstant) ' ' unitStr]);
 else
-     error(['''' sArgs.plotCoord '''' ' is no appropriate string for ''' 'plotCoord' ''', could not create plot']);
+    error(['''' sArgs.plotCoord '''' ' is no appropriate string for ''' 'plotCoord' ''', could not create plot']);
 end
 
-%end function
+set(lineHandle,'LineWidth',ita_preferences('linewidth'));
+if strcmpi(sArgs.plotDomain,'freq')
+    unitStr = 'Hz';
+else
+    unitStr = 's';
+end
+title(['Polar pattern at ' num2str(frequencyPlot) ' ' unitStr]);
 end

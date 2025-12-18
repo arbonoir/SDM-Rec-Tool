@@ -9,7 +9,7 @@ function varargout = ita_write_gui(varargin)
 ele = 1;
 pList{ele}.description = 'itaAudio';
 pList{ele}.helptext    = 'What do you want to save?';
-pList{ele}.datatype    = 'itaAudioInUse';
+pList{ele}.datatype    = 'itaAudio';
 pList{ele}.default     = '';
 
 ele = 2;

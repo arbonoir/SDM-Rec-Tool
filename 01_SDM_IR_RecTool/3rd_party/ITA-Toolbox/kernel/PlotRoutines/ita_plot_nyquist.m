@@ -30,7 +30,7 @@ thisFuncStr  = [upper(mfilename) ':'];     %Use to show warnings or infos in thi
 
 %% +++Body - Your Code here+++ 'input' is an audioObj and is given back 
 %   Number of input arguments
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 
 Z=varargin{1};
 

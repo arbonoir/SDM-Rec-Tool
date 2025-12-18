@@ -14,16 +14,19 @@ classdef itaMSTFinterleaved < itaMSTF
         mTwait          = 0.1;  % Time to wait between sweeps.
         mCommentData    = {};   % Comment data.
         mFinalExcitation = [];  % Final interleaved data
+        
+        mSkipCrop = 0;
     end
     
     properties(Dependent = true, Hidden = false, Transient = true, SetObservable = true, AbortSet = true)
         twait;        % Time to wait between sweeps.
+        skipCrop;
     end
     properties(Dependent = true)
         nWait % samples between two subsequent sweeps
     end
     properties(Dependent = false, Hidden = false, SetObservable = true, AbortSet = true)
-        repititions = 1; % how many times do you want the signal to be played?
+        repetitions = 1; % how many times do you want the signal to be played?
     end
     
     methods
@@ -89,7 +92,7 @@ classdef itaMSTFinterleaved < itaMSTF
             % properties.
             addlistener(this,'twait','PreSet',@this.init);
             addlistener(this,'outputChannels','PreSet',@this.init);
-            addlistener(this,'repititions','PreSet',@this.init);
+            addlistener(this,'repetitions','PreSet',@this.init);
         end
         
         %% INIT
@@ -130,6 +133,28 @@ classdef itaMSTFinterleaved < itaMSTF
             
         end
         
+        function set.skipCrop(this, value)
+            % set.skipCrop - Set the value of skipCrop.
+            %
+            % This function sets the value of skipCrop in the current
+            % measurement setup. It does not return anything.
+            % skipCrop skips the crop in the run to improve meausrement
+            % time
+            this.mSkipCrop = value;
+            
+        end
+        
+        function value = get.skipCrop(this)
+            % get.skipCrop - Returns the current value of skipCrop.
+            %
+            % This function reads out and returns set value of skipCrop, set
+            % in the current measurement setup.
+            % skipCrop skips the crop in the run to improve meausrement
+            % time
+            value = this.mSkipCrop;
+            
+        end
+        
         function value = get.nWait(this)
             % get.nWait - Get number of samples between two subsequent sweeps
             %
@@ -161,7 +186,7 @@ classdef itaMSTFinterleaved < itaMSTF
                 'sweepRateIncrement',0.01,...
                 'harmonicDecrease',30,... %each harmonic order is assumed to decrease by this amount of energy in dB
                 'harmonicDecreaseVector', [20 20 20 20],... % if this is NOT empty than this values will be used as harmonic decrease!
-                'L', 40,... %Number of Loudspeakers, only used in cyclic mode to ensure that only one sweep is played per loudspeaker at the same time!
+                'L', 64,... %Number of Loudspeakers, only used in cyclic mode to ensure that only one sweep is played per loudspeaker at the same time!
                 'sweeprate_range', [5 10],... % => FFT-degree ~15-16.5
                 'freq_range', this.freqRange,...
                 'plot', false);
@@ -293,9 +318,9 @@ classdef itaMSTFinterleaved < itaMSTF
             nSamples = round(t_sweep*this.samplingRate/2)*2;
             
             this.twait     = t_wait;
-            this.fftDegree = nSamples;
+            this.nSamples = nSamples;
             
-            this.type = ita_generate_exact_sweep('freqRange',this.freqRange,'bandwidth',this.bandwidth,'sweeprate',sweeprate);
+            this.type = ita_generate_sweep('freqRange',this.freqRange,'bandwidth',this.bandwidth,'sweeprate',sweeprate, 'stopMargin', this.stopMargin);
         end
         
         function [t_wait_vector, sweeprate_new] = optimize_majdak(this, varargin)
@@ -307,7 +332,7 @@ classdef itaMSTFinterleaved < itaMSTF
                 'SNR',80,... %in dB
                 'harmonicDecrease',30,... %each harmonic order is assumed to decrease by this amount of energy in dB
                 'harmonicDecreaseVector', [30 50 70 90],... % if this is NOT empty than this values will be used as harmonic decrease!
-                'L', 40,...
+                'L', 64,...
                 'freq_range', this.freqRange,...
                 'sweeprate', 9.1);
             
@@ -347,23 +372,32 @@ classdef itaMSTFinterleaved < itaMSTF
         
         
         function result = calculate_excitation(this)
-            this.checkready; % input/output Channels set?
+            % this.checkready; % input/output Channels set? jck: Using
+            % checkready leads to the problem that the edit menu pops open
+            % if the output is defined before the input during the manual
+            % initialization in scripts. Workaround (checkready without inputchannel check):
+            
+            nOutputChannels = length(this.outputChannels);                              % Determine the number of output channels.
+            if nOutputChannels == 0
+                this.edit;
+                nOutputChannels = length(this.outputChannels);
+            end
             
             % Set variables
             excitation_raw  = this.raw_excitation;                                      % Call to itaMSTF.raw_excitation. Generates the raw specified excitation signal.
             
             % Maybe put stuff below in get_final_excitation ??
             % Would be better for including the outchan matrix, too.
-            % The above would then be the same as get_excitation in itaMSTF.
+            % The above would then be the same as get_excitation in itaMSTF.      
             
-            nOutputChannels = length(this.outputChannels);                              % Determine the number of output channels.
             
             nWait = this.nWait;
-            if numel(nWait) == numel(nOutputChannels)
-                nWaitSum = sum(nWait);
+            if numel(nWait) == nOutputChannels
+                nWaitSum = sum(nWait); % jri: does this ever happen?
             else
-                nWaitSum = sum(nWait) + nWait(end); %assume the last twait to be also good for the first excitation of the new repition
+                nWaitSum = sum(nWait) + nWait(end);
             end
+
             nSamplesStint = excitation_raw.nSamples + nWaitSum;   % Determine total number of samples for one stint through all output channels.
             
             % Create single stint excitation
@@ -380,11 +414,11 @@ classdef itaMSTFinterleaved < itaMSTF
             nSamples       = result.nSamples;
             
             % extend result
-            result.fftDegree = nSamples + nWaitSum * (this.repititions - 1);
+            result.nSamples = nSamples + nWaitSum * (this.repetitions - 1);
             timeData         = single(result.time).';
             idxx_init        = (1:nSamples);
             ita_verbose_info('itaMSTFinterleaved::appending time data.',1);
-            for idx = 2:this.repititions
+            for idx = 2:this.repetitions
                 idxx            = idxx_init+nWaitSum * (idx-1);
                 timeData(:,idxx) = timeData(:,idxx) + singleTimeData;
             end
@@ -401,6 +435,12 @@ classdef itaMSTFinterleaved < itaMSTF
             end
             
             res = this.mFinalExcitation .*  this.pre_scaling .* this.outputamplification_lin;
+            
+            % if an outputequalization filter is set, convolve it with the
+            % excitation
+            if ~isempty(this.outputEqualizationFilters)
+                  res = ita_convolve(res,this.outputEqualizationFilters,'circular',1);
+            end
         end
         
         %% MEASURE NONLINS AND TRIR
@@ -415,7 +455,7 @@ classdef itaMSTFinterleaved < itaMSTF
             inputvec = this.inputChannels;
             % Use first inputchannel!
             this.inputChannels = inputvec(1);
-            % Measure nonlins f�r alle LS einzeln:
+            % Measure nonlins f???r alle LS einzeln:
             for idx = 1:numel(outputvec)
                 this.outputChannels = outputvec(idx);
                 nonlinearities = this.run_HD(varargin{:});
@@ -451,11 +491,12 @@ classdef itaMSTFinterleaved < itaMSTF
             [result, max_rec_lvl] = run_raw_imc_dec(this);
             
             % Cropping.
-            result = this.crop(result);
-            
+            if ~this.skipCrop
+                result = this.crop(result);
+            end    
         end
         
-        function [result] = run_separate(this, varargin)
+        function [result, max_rec_lvl] = run_separate(this, varargin)
             % run separate - Run standard measurement, but each loudspeaker
             % seperatly - NO INTERLEAVING!
             %
@@ -477,6 +518,7 @@ classdef itaMSTFinterleaved < itaMSTF
             if sArgs.crop
                 result = ita_extract_dat(result, max(this.nWait) ,'forcesamples', true);
             end
+            max_rec_lvl = 0;
         end
         
         function [result] = run_THDN(this, varargin)
@@ -492,8 +534,8 @@ classdef itaMSTFinterleaved < itaMSTF
             
             sArgs = struct('tIR', 0.005, 'tSpace', 0.002);
             sArgs = ita_parse_arguments(sArgs, varargin);
-            reps = this.repititions;
-            this.repititions = 1;
+            reps = this.repetitions;
+            this.repetitions = 1;
             % Measure Signal, Distortion and Noise:
             SDN = this.run;
             % Measure Distortion and Noise: (Turn off one loudspeaker each measurement)
@@ -503,7 +545,7 @@ classdef itaMSTFinterleaved < itaMSTF
                 DN(idx) = temp.ch(idx); %#ok<AGROW>
             end
             this.pre_scaling = ones(1,numel(this.outputChannels));
-            this.repititions = reps;
+            this.repetitions = reps;
             DN = merge(DN);
             
             % Apply window:
@@ -594,13 +636,16 @@ classdef itaMSTFinterleaved < itaMSTF
                 % jri: changed default output behaviour to multi instance 
                 %      this is done to have a consistent behaviour with
                 %      each use case of the class
-                timeData = reshape(data.timeData(1:nSamplesWait*this.repititions*nOutputChannels, :) , nSamplesWait, data.nChannels*this.repititions,nOutputChannels);
-                
+                timeData = reshape(data.timeData(1:nSamplesWait*this.repetitions*nOutputChannels, :),...
+                    nSamplesWait, data.nChannels*this.repetitions*nOutputChannels);                
                 if (nOutputChannels > 1)
                    resultsMI = itaAudio(1,nOutputChannels);
                    for index = 1:nOutputChannels
                       resultsMI(index) = result;
-                      resultsMI(index).timeData = timeData(:,:,index); 
+                      resultsMI(index).timeData = timeData(:,index:nOutputChannels:end);
+                      repmatFactor = resultsMI(index).nChannels/result.nChannels;
+                      resultsMI(index).channelNames = repelem(result.channelNames,repmatFactor,1);
+                      resultsMI(index).channelUnits = repelem(result.channelUnits,repmatFactor,1);
                    end
                    result = resultsMI;
                 else
@@ -611,8 +656,8 @@ classdef itaMSTFinterleaved < itaMSTF
             % no speed up possible... do it the slow way:
             %--------------------------------------------------------------
             
-            nSamplesWait = repmat(nSamplesWait,this.repititions,1);
-            final_idx          = numel(this.outputChannels) * this.repititions; % Compute total number of sweeps that has been played back.
+            nSamplesWait = repmat(nSamplesWait,this.repetitions,1);
+            final_idx          = numel(this.outputChannels) * this.repetitions; % Compute total number of sweeps that has been played back.
             
             % Prepare data for cropping. Extract as many samples from
             % recording data as originally were in the excitation.
@@ -636,10 +681,11 @@ classdef itaMSTFinterleaved < itaMSTF
                     final_response = ita_extend_dat(final_response, data.nSamples, 'symmetric');
                     currentData = ita_divide_spk(data,final_response,'regularization', this.freqRange).';
                 else
+                    %force time domain object
                     currentData = data.';
                 end
                 
-                for idx = ch_idx:nOutputChannels:(this.repititions * nOutputChannels)
+                for idx = ch_idx:nOutputChannels:(this.repetitions * nOutputChannels)
                     
                     % Crop data to an interval equal to the number of the wait samples.
                     % Move this interval by the number of wait samples for every loop iteration.
@@ -715,7 +761,7 @@ classdef itaMSTFinterleaved < itaMSTF
             % properties to be saved during the savin process.
             
             
-            result = {'mTwait','mCommentData', 'repititions'};
+            result = {'mTwait','mCommentData', 'repetitions'};
             
         end
         

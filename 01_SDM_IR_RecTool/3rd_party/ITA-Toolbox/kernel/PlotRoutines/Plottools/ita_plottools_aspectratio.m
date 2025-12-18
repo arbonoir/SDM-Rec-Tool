@@ -27,7 +27,7 @@ function ita_plottools_aspectratio(varargin)
 
 
 %% Initialization and Input Parsing
-error(nargchk(0,2,nargin,'string'));
+narginchk(0,2);
 
 if nargin == 0
     %% use preferences aspect ratio and scale current figure

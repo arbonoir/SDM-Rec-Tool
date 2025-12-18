@@ -30,7 +30,7 @@ if ~strcmpi(Data.signalType,'energy')
 end
 
 
-[nSamples nBins] = ita_get_nSamples(fftDegree);
+[nSamples, nBins] = ita_get_nSamples(fftDegree);
 
 
 OldFreqs = Data.freqVector;

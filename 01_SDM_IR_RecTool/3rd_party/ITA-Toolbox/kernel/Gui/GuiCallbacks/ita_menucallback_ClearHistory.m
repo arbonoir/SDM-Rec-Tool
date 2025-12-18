@@ -5,8 +5,11 @@ function ita_menucallback_ClearHistory(hObject, event)
 % You can find the license for this m-file in the license.txt file in the ITA-Toolbox folder. 
 % </ITA-Toolbox>
 
-result = ita_getfrombase;
-result.header = ita_metainfo_rm_historyline(result,'all');
-ita_setinbase(ita_inuse(),result);
-disp(result.header)
+fgh        = ita_guisupport_getParentFigure(hObject);
+audioObj = getappdata(fgh, 'audioObj');
+result = ita_metainfo_rm_historyline(audioObj,'all');
+setappdata(fgh, 'audioObj', result);
+ita_guisupport_updateGUI(fgh);
+
+
 end

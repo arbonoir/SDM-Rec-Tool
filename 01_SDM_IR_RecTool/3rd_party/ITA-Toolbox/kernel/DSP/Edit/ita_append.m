@@ -25,7 +25,7 @@ function asResult = ita_append(varargin)
 
 
 %% Initialization
-error(nargchk(2,2,nargin));
+narginchk(2,2);
 if isempty(varargin{1}) && isa(varargin{2},'itaSuper')
     asResult = varargin{2};
     return

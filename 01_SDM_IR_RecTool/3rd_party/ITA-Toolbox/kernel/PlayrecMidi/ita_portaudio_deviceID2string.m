@@ -19,9 +19,9 @@ function varargout = ita_portaudio_deviceID2string(varargin)
 % Created:  22-Apr-2009 
 
 %% Initialization and Input Parsing
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 sArgs        = struct('pos1_deviceID','numeric');
-[deviceID,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[deviceID,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<ASGLU>
 hPlayRec = ita_playrec; %work with handle instead of directly calling playrec
 
 %% ID2str
@@ -34,7 +34,7 @@ end
 DevInfo = squeeze(struct2cell(Devices));
 DevIds = cellfun(@(x) cat(1,x),DevInfo(1,:));
 
-if deviceID > -1 && deviceID <= max(DevIds)
+if ~isempty(DevIds) && deviceID > -1 && deviceID <= max(DevIds)
     deviceInfo = Devices(DevIds == deviceID);
     deviceName = DevInfo{2,DevIds == deviceID};
 else % empty device

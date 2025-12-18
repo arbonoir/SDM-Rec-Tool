@@ -14,7 +14,7 @@ end % function
 %
 
 function varargout = divide_dat(varargin)
-error(nargchk(2,2,nargin,'string'));
+narginchk(2,2);
 a = varargin{1};
 b = varargin{2};
 

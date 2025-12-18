@@ -27,7 +27,7 @@ function varargout = ita_filter_LiRi(varargin)
 thisFuncStr  = [upper(mfilename) ':'];     %Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-sArgs        = struct('pos1_data','itaAudioFrequency','pos2_freqvec','vector', 'order', 8);
+sArgs        = struct('pos1_data','itaAudioFrequency','pos2_freqvec','vector', 'order', 8, 'zerophase',false);
 [input,freqvec,sArgs] = ita_parse_arguments(sArgs,varargin); 
 
 %% parse freqvec
@@ -56,6 +56,10 @@ liriFilt = butterFilt .* butterFilt;
 
 liriFR   = itaAudio(liriFilt,input.samplingRate,'freq');
 liriFR.signalType = 'energy';
+
+if sArgs.zerophase
+    liriFR = ita_zerophase(liriFR);
+end
 
 %% apply filtering
 input = input * liriFR; 

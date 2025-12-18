@@ -41,7 +41,7 @@ verboseMode  = ita_preferences('verboseMode');  % Use to show additional informa
 thisFuncStr  = [upper(mfilename) ':'];     %Use to show warnings or infos in this functions
 
 % Initialization and Input Parsing
-error(nargchk(1,2,nargin,'string'));
+narginchk(1,2);
 
 % recognize input parameters
 if ~(ischar(varargin{1}))

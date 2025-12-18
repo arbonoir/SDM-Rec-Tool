@@ -26,10 +26,10 @@ verboseMode  = ita_preferences('verboseMode');  %#ok<NASGU>
 thisFuncStr  = [upper(mfilename) ':'];     %#ok<NASGU>
 
 %% Initialization
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 % Find Audio Data
 sArgs        = struct('pos1_a','itaSuper');
-[data,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[data,sArgs] = ita_parse_arguments(sArgs,varargin);
 
 data = conj(data);
 

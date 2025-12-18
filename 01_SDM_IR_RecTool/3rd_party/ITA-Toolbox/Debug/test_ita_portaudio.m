@@ -13,7 +13,7 @@ end
 
 %% also test portaudio monitor
 ita_portaudio_monitor('init',[2 3]);
-ita_portaudio_monitor('update',[-30 1 -3 -10 1].');
+ita_portaudio_monitor('update',[-0 0 0 0 0].');
 ita_portaudio_monitor('update',[-60 -20 -80 -30 -20].');
 
 end

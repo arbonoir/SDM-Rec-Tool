@@ -30,7 +30,7 @@ verboseMode  = ita_preferences('verboseMode');  %#ok<NASGU> Use to show addition
 thisFuncStr  = [upper(mfilename) ':'];     %#ok<NASGU> % Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-error(nargchk(0,2,nargin,'string'));
+narginchk(0,2);
 
 if nargin == 0
     %% use preferences aspect ratio and scale current figure

@@ -1,4 +1,4 @@
-function ita_roomacoustics_gui(varargin)
+function varargout = ita_roomacoustics_gui(varargin)
 %ITA_ROOMACOUSTICS_GUI - GUI for ita_roomacoustics()
 %  This function ++++ FILL IN INFO HERE +++
 %
@@ -15,8 +15,8 @@ function ita_roomacoustics_gui(varargin)
 %        <a href="matlab:doc ita_roomacoustics_gui">doc ita_roomacoustics_gui</a>
 
 % <ITA-Toolbox>
-% This file is part of the application RoomAcoustics for the ITA-Toolbox. All rights reserved. 
-% You can find the license for this m-file in the application folder. 
+% This file is part of the application RoomAcoustics for the ITA-Toolbox. All rights reserved.
+% You can find the license for this m-file in the application folder.
 % </ITA-Toolbox>
 
 
@@ -28,25 +28,58 @@ function ita_roomacoustics_gui(varargin)
 pList = {};
 
 ele = 1;
-pList{ele}.description = 'First itaAudio';
-pList{ele}.helptext    = 'This is the input itaAudio';
-pList{ele}.datatype    = 'itaAudioInUse';
-pList{ele}.default     = '';
+
+if ~nargin  && ~nargout
+    
+    pList{ele}.description = 'First itaAudio';
+    pList{ele}.helptext    = 'This is the input itaAudio';
+    pList{ele}.datatype    = 'itaAudio';
+    pList{ele}.default     = '';
+    
+    ele = ele + 1;
+    pList{ele}.description = 'Name of Result'; %this text will be shown in the GUI
+    pList{ele}.helptext    = 'The result will be exported to your workspace with the variable name specified here';
+    pList{ele}.datatype    = 'itaAudioResult'; %based on this type a different row of elements has to drawn in the GUI
+    pList{ele}.default     = 'roomacousticResults';
+    
+elseif ~nargin  && nargout
+    pList{ele}.description = 'First itaAudio';
+    pList{ele}.helptext    = 'This is the input itaAudio';
+    pList{ele}.datatype    = 'itaAudio';
+    pList{ele}.default     = '';
+    
+    ele = ele+1;
+    pList{ele}.description = 'Result will be given as output variable'; %this text will be shown in the GUI
+    pList{ele}.helptext    = 'Result will be given as output variable';
+    pList{ele}.datatype    = 'text'; %based on this type a different row of elements has to drawn in the GUI
+    
+else
+    
+    pList{ele}.description = 'First itaAudio';
+    pList{ele}.helptext    = 'This is the input itaAudio';
+    pList{ele}.datatype    = 'itaAudioFix';
+    pList{ele}.default     = varargin{1};
+    
+    ele = ele+1;
+    pList{ele}.description = 'Result will be plotted and saved in current GUI figure'; %this text will be shown in the GUI
+    pList{ele}.helptext    = 'The result will be plotted and exported to your current GUI.';
+    pList{ele}.datatype    = 'text'; %based on this type a different row of elements has to drawn in the GUI
+    
+end
+
+if nargin >0 || nargout > 0 % ita_toolbox_gui call OR output var
+else % set in bae stuff
+    
+end
 
 
-
-ele = ele + 1;
-pList{ele}.description = 'Name of Result'; %this text will be shown in the GUI
-pList{ele}.helptext    = 'The result will be exported to your workspace with the variable name specified here';
-pList{ele}.datatype    = 'itaAudioResult'; %based on this type a different row of elements has to drawn in the GUI
-pList{ele}.default     = 'roomacousticResults';
 
 ele = ele + 1;  pList{ele}.datatype    = 'line';
 
 ele = ele+1;
 pList{ele}.description = 'Parameter'; %this text will be shown in the GUI
-pList{ele}.helptext    = 'Select the parameter to calculate. For multiple parameter calculation use console'; 
-pList{ele}.datatype    = 'char_popup'; 
+pList{ele}.helptext    = 'Select the parameter to calculate. For multiple parameter calculation use console';
+pList{ele}.datatype    = 'char_popup';
 pList{ele}.list        = ita_string_listing(ita_roomacoustics_parameters('getAvailableParameters'), 'seperator', '|');
 pList{ele}.default     = 'T20'; %default value, could also be empty, otherwise it has to be of the datatype specified above
 
@@ -79,8 +112,8 @@ edcMethodString = ita_string_listing({'noCut' 'justCut' 'cutWithCorrection' 'sub
 
 ele = ele+1;
 pList{ele}.description = 'Noise compensation'; %this text will be shown in the GUI
-pList{ele}.helptext    = 'Select the noise compensation method.'; 
-pList{ele}.datatype    = 'char_popup'; 
+pList{ele}.helptext    = 'Select the noise compensation method.';
+pList{ele}.datatype    = 'char_popup';
 pList{ele}.list        = edcMethodString;
 pList{ele}.default     = 'subtractNoiseAndCutWithCorrection'; %default value, could also be empty, otherwise it has to be of the datatype specified above
 
@@ -120,13 +153,13 @@ ele = ele + 1; pList{ele}.datatype    = 'line';
 
 % OLD WAY, more than one output parameter. this is too complicated for ita_TB_gui, setinbase etc...
 % raPar           = ita_preferences('roomacousticParameters');
-% 
+%
 % categoryNameCell = fieldnames(raPar);
 % for iCat = 1:numel(categoryNameCell)
 %     ele = length(pList) + 1;
 %     pList{ele}.datatype    = 'text';
 %     pList{ele}.description    = strrep(categoryNameCell{iCat}, '_', ' ');
-%     
+%
 %     fieldNameCell = fieldnames(raPar.(categoryNameCell{iCat}));
 %     for iField = 1:numel(fieldNameCell)
 %         ele = length(pList) + 1;
@@ -143,19 +176,24 @@ ele = ele + 1; pList{ele}.datatype    = 'line';
 %         end
 %         pList{ele}.default     = raPar.(categoryNameCell{iCat}).(fieldNameCell{iField});
 %     end
-%     
+%
 %     ele = length(pList) + 1;
 %     pList{ele}.datatype    = 'line';
-%     
+%
 % end
 
-
+varargout = {};
 guiOutput = ita_parametric_GUI(pList, 'Roomacoustics');
+
 %%
 if ~isempty(guiOutput)
-    tmpPar  = [possiblePar(:)'; guiOutput(4:end)];
-    raResults  = ita_roomacoustics(guiOutput{[1 3]}, tmpPar{:});
-    ita_setinbase(guiOutput{2}, raResults.(guiOutput{3}) );
+    tmpPar  = [possiblePar(:)'; guiOutput(end-6:end)];
+    raResults  = ita_roomacoustics(guiOutput{[1 end-7]}, tmpPar{:}); % end-7 weil anzhal gui elemet abhängiv von inpt und output variablen ist
+    if nargout >= 1
+        varargout =  {raResults.(guiOutput{end-7})};
+    else
+        ita_setinbase(guiOutput{2}, raResults.(guiOutput{end-7}) );
+    end
 end
 
 

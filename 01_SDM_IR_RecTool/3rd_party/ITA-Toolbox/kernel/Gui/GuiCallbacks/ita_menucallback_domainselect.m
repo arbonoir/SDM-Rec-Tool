@@ -15,19 +15,22 @@ topmenu = get(hObject,'Parent'); % Top menu
 
 listofsubs = get(topmenu,'Children');
 
-for idx = 1:numel(listofsubs)
-   Label = get(listofsubs(idx),'Label');
-   if strcmpi(Label,newdomain)
-       set(listofsubs(idx),'Checked','on');
-   else
-       set(listofsubs(idx),'Checked','off');
-   end
-end
-ita_main_window('handle',gcf);
-ita_plot_gui; %Replot
+% % % for idx = 1:numel(listofsubs)
+% % %    Label = get(listofsubs(idx),'Label');
+% % %    if strcmpi(Label,newdomain)
+% % %        set(listofsubs(idx),'Checked','on');
+% % %    else
+% % %        set(listofsubs(idx),'Checked','off');
+% % %    end
+% % % end
 
-%ita_inuse(varname);
-%clf(ita_main_window);
-%ita_menu('handle',ita_main_window);
-%ita_getfrombase();
+% avoid loop
+% update check sign of cuurrent domain
+idxActive = strcmpi(get(listofsubs,'Label'), newdomain);
+set(listofsubs(idxActive),'Checked','on');
+set(listofsubs(~idxActive),'Checked','off');
+
+% update plot 
+ita_guisupport_updateGUI(ita_guisupport_getParentFigure(hObject))
+
 end

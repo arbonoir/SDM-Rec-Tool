@@ -34,7 +34,7 @@ plotType = 'magnitude';
 frequencyVector = [];
 
 %% initializing
-error(nargchk(1,4,nargin,'string'));
+narginchk(1,4);
 
 nUndefinedArguments = nargin;
 

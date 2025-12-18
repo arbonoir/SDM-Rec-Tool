@@ -5,7 +5,7 @@ function ita_plottools_buttonpress(src, evnt)
 %
 %   This function is normally not used by the user!
 %
-%   See also ita_plot_spk, ita_plot_dat.
+%   See also ita_plot_freq, ita_plot_time.
 %
 %   Reference page in Help browser
 %        <a href="matlab:doc ita_plottools_buttonpress">doc ita_plottools_buttonpress</a>
@@ -19,9 +19,9 @@ function ita_plottools_buttonpress(src, evnt)
 % Created:  01-Sep-2008
 
 %% get additional info in the user section of the figure
-fgh        = gcf;
-axh        = gca;
+fgh        = ita_guisupport_getParentFigure(src);
 FigureData = getappdata(fgh);
+axh        = gca; % not this: FigureData.ActiveAxis; because it does not get updated
 AxisData   = getappdata(axh);
 try %pdi
     if isempty(fieldnames(FigureData))

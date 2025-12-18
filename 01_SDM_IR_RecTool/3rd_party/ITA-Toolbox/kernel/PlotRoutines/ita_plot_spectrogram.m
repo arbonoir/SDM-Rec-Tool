@@ -46,10 +46,8 @@ function varargout = ita_plot_spectrogram(varargin)
 %% Get Defaults
 % matlabdefaults = ita_set_plot_preferences; %set ita toolbox preferences and get the matlab default settings
 
-% TODO % 20u Pa scaling. pdi
-
 %% Initialization
-error(nargchk(1,10,nargin,'string'));
+narginchk(1,10);
 sArgs   = struct('pos1_data','itaAudioTime','log','off','clim',[],'cut','off','figure_handle',[],'axes_handle',[]...
     ,'nofigure','false','FFT',[],'overlap',[],'nodb',false,'ylog',false,'linewidth',ita_preferences('linewidth'),'fontname',ita_preferences('fontname'),'fontsize',ita_preferences('fontsize'), 'xlim',[],'ylim',[],'axis',[],'aspectratio',[],'hold','off','precise',true);
 [data,sArgs]   = ita_parse_arguments(sArgs,varargin);
@@ -65,50 +63,31 @@ if isempty(sArgs.FFT)
     nWindow  = 2^nextpow2(nSamples / 2000);
     if nWindow < 1024
         nWindow = 1024;
-        nOverlap = nWindow ./ 8;
-    else
-        nOverlap = nWindow./2; %10;
     end
     
-    nFFT     = nWindow; %2048;
+    nOverlap = nWindow./2;
+    
+    nFFT     = nWindow;
 else
     nFFT = sArgs.FFT;
     nWindow = nFFT;
     nOverlap = round(nFFT*sArgs.overlap);
 end
 
-%% pdi: checking for very long data and avoiding memory overflow!
-if data.fftDegree > 24;
-    nBlocks = 8;
-else
-    nBlocks = 1;
-end
-block_length = data.nSamples / nBlocks;
-
 
 %% do spectrogram
 for ch_idx = 1:data.nChannels
     
-    p = [];
-    t = [];
-    for part_idx = 1:nBlocks
-        limits = (part_idx-1)*block_length + 1 : (part_idx)*block_length;
-        [y_part,f,t_part,p_part] = spectrogram(double(data.timeData(limits,ch_idx)),nWindow,nOverlap,nFFT,data.samplingRate ,'yaxis'); %#ok<ASGLU>
-        t = [t, t_part + (part_idx-1)*block_length ./ data.samplingRate]; %#ok<AGROW>
-        p = [p p_part]; %#ok<AGROW>
-    end
+    [S,f,t] = spectrogram(double(data.timeData(:,ch_idx)),hann(nWindow),nOverlap,nFFT,data.samplingRate);
+    S = S./(nFFT/2);
     
-    %     end
-    clear y
-    clear y_part
-    clear t_part
-    clear p_part
-    p = double(p);
     if sArgs.nodb
-        p = abs(p);
+        S = abs(S);
     else
-        p = 10*log10(abs(p));
+        [~,  refValues, log_prefix] = itaValue.log_reference(data.channelUnits);
+        S = log_prefix.*log10(abs(S + realmin)./refValues);
     end
+        
     if ~sArgs.nofigure
         %% Figure and axis handle
         if ~isempty(sArgs.figure_handle) && ishandle(sArgs.figure_handle)
@@ -133,7 +112,7 @@ for ch_idx = 1:data.nChannels
         
         %% Get CLIMs
         if isempty(sArgs.clim)
-            a(2) = max(max(p));
+            a(2) = max(max(S));
             a(2) = 10 * ceil (a(2)/10);
             a(1) = a(2)-70;
         else %specified by user
@@ -143,8 +122,8 @@ for ch_idx = 1:data.nChannels
         %% Cut results to CLIM to avoid sparcles?
         if sArgs.cut
             disp('cutting')
-            p(p < a(1)-20) = a(1)-20;
-            p(p > a(2)+20) = a(2)+20;
+            S(S < a(1)-20) = a(1)-20;
+            S(S > a(2)+20) = a(2)+20;
         end
         
         
@@ -154,14 +133,14 @@ for ch_idx = 1:data.nChannels
             %         axis xy; axis tight; colormap(jet); view(0,90);
             %
             f = f/1000;
-            lnh = pcolor(sArgs.axes_handle,t,f,p);
+            lnh = pcolor(sArgs.axes_handle,t,f,S);
             axh = get(fgh,'CurrentAxes');
             setappdata(axh,'ChannelHandles',lnh);
             setappdata(axh,'FigureHandle',gcf); %pdi: saver to write this, than to estimate via parent / GUI problem
             
             %% call help function
             sArgs.abscissa = t;
-            sArgs.plotData = p;
+            sArgs.plotData = S;
             
             sArgs.xAxisType  = 'time'; %Types: time and freq
             sArgs.yAxisType  = 'freq';
@@ -178,7 +157,7 @@ for ch_idx = 1:data.nChannels
             end
             sArgs.legendString = data.legend;
             [fgh,axh] = ita_plottools_figurepreparations(data,fgh,axh,axh,'options',sArgs);
-            
+            setappdata(fgh,'ita_domain', 'spectrogram');
             if sArgs.nodb
             else
                 set(axh,'CLim',a);
@@ -190,17 +169,22 @@ for ch_idx = 1:data.nChannels
             set(axh,'TickDir','out')
             set(axh,'TickLength',[0.003 0.02])
             ita_plottools_colormap('artemis');
+            
+            
+            
+            
         end
     end
     %% Return the figure handle
     if nargout
-        varargout{1} = p;
+        varargout{1} = S;
         varargout{2} = fgh;
         varargout{3} = axh;
     end
     
-    colorbar;
+    % set some label to the colorbar
+    hColorbar = colorbar('vert');
+    hLabel = get(hColorbar,'ylabel');
+    set(hLabel,'String','Modulus in dB');
     %end function
 end
-
-% ita_restore_matlab_default_plot_preferences(matlabdefaults) % restore matlab default settings

@@ -41,7 +41,7 @@ if nargin == 0 % generate GUI
     ele = 1;
     pList{ele}.description = 'First itaAudio';
     pList{ele}.helptext    = 'This is the first itaAudio for addition';
-    pList{ele}.datatype    = 'itaAudioInUse';
+    pList{ele}.datatype    = 'itaAudio';
     pList{ele}.default     = '';
     
     ele = 2;
@@ -78,10 +78,20 @@ if nargin == 0 % generate GUI
 end
 
 
-error(nargchk(2,3,nargin));
+narginchk(2,3);
 
 sArgs   = struct('pos1_num','itaAudioTime');
 [audioObj, sArgs] = ita_parse_arguments(sArgs,varargin(1)); 
+
+if numel(audioObj) > 1
+    ita_verbose_info([thisFuncStr 'Calling for all instances.'],1)
+    result = itaAudio(size(audioObj));
+    for idx = 1:numel(audioObj)
+        result(idx) = ita_time_crop(audioObj(idx),varargin{2:end}); 
+    end
+    varargout{1} = result;
+    return
+end
 
 interval = varargin{2};
 

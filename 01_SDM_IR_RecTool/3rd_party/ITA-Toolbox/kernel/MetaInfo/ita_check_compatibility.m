@@ -43,7 +43,7 @@ else
 end
 
 %% Initialization and Input Parsing
-% error(nargchk(2,20,nargin,'string'));
+% narginchk(2,20);
 sArgs        = struct('units',false,'size',false,'channels',false,'samplingRate',false,'all',true);
 data1 = varargin{1};
 data2 = varargin{2};

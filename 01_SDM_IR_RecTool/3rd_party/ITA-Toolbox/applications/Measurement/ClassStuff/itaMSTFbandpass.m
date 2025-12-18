@@ -123,7 +123,7 @@ classdef itaMSTFbandpass < itaMSTF
                 exc = res*freqFilters;
                 % window out zerophase effects at the end
                 exc = ita_time_window(exc,res.trackLength - [0.7 0.5].*this.stopMargin,'time');
-                if strcmpi(this.type,'exp') || strcmpi(this.type,'expsweep')
+                if strcmpi(this.type,'exp')
                     % careful this only works for strictly exponential sweeps
                     fr = this.finalFreqRange;
                     % sweep rate, do this again because excitation has changed

@@ -69,7 +69,7 @@ if nargin == 0
     varargout{1} = ita_filter_pdi_GUI();
     return;
 end
-error(nargchk(2,20,nargin,'string'));
+narginchk(2,20);
 
 %find data
 if isnumeric(varargin{1})

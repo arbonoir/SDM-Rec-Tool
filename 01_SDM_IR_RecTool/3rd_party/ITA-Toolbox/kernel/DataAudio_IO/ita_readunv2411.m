@@ -23,7 +23,7 @@ function varargout = ita_readunv2411(varargin)
 
 %% Initialization
 % Number of Input Arguments
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 if ischar(varargin{1}) % filename should be a string
     unvFilename = varargin{1};
 else

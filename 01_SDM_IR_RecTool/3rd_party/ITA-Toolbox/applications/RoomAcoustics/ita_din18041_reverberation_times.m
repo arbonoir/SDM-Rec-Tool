@@ -25,7 +25,7 @@ function varargout = ita_din18041_reverberation_times(varargin)
 
 %% Initialization and Input Parsing
 sArgs        = struct('v',[],'purpose','speech','add_to', 'itaAudioFrequency');
-error(nargchk(1,6,nargin,'string'));
+narginchk(1,6);
 sArgs = ita_parse_arguments(sArgs,varargin);
 type = lower(sArgs.purpose);
 

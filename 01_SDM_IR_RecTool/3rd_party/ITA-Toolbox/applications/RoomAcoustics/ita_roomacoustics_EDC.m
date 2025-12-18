@@ -8,18 +8,20 @@ function varargout = ita_roomacoustics_EDC(varargin)
 %   EDCs = ita_roomacoustics_EDC(inputIR, options)
 %
 %   Options (default):
-%           'method' ('cutWithCorrectionISO') :
+%           'method' ('cutWithCorrection') :
 %                                      'cutWithCorrection'   : truncate impulse response according to given intersection time and apply correction (accorrding ISO 3382-1:2009)
 %                                      'justCut'             : truncate impulse response according to given intersection time
 %                                      'noCut'               : take whole imulse response for EDC calculation
 %                                      'subtractNoise'       : subtract noise estimation  from impulse response
 %                                      'unknownNoise'        : apply moving average window with width T/5 (according (old) ISO 3382:2000 )
-
-
 %
-%           'intersectionTime' ()         : itersection times for all input channels as itaResult (for methods 'cutWithCorrectionISO' and 'justCut')
+%           'intersectionTime' ()         : itersection times for all input channels as itaResult (for methods 'cutWithCorrection' and 'justCut')
 %           'normTo0dB' (true)            : EDC starts at 0 dB
-%  Example:
+%
+%  Examples:
+%   EDCs = ita_roomacoustics_EDC(RIR, 'method','noCut')
+%   EDCs = ita_roomacoustics_EDC(myRIR, 'method', 'unknownNoise')
+
 %   EDCs = ita_roomacoustics_EDC(RIR, 'intersectionTime', iTimes)
 %
 %  See also:
@@ -38,13 +40,12 @@ function varargout = ita_roomacoustics_EDC(varargin)
 % Created:  05-Aug-2011
 
 % andere methoden
-% - 'noCutWithCorrection': falls IR kürzer als intersectiontime, noch nicht getestet
+% - 'noCutWithCorrection': falls IR kuerzer als intersectiontime, noch nicht getestet
 
 
 %% Input Parsing
 sArgs         = struct('pos1_data','itaAudio', 'method', 'cutWithCorrection', 'intersectionTime', 'itaResult', 'lateRevEstimation', 'itaResult', 'noiseRMS',  'itaResult', 'normTo0dB', true, 'plot', false ,'calcCenterTime', false, 'inputIsSquared', false);
 [input,sArgs] = ita_parse_arguments(sArgs,varargin);
-
 
 % check if method is known
 possibleMethods = {'noCut' 'justCut' 'cutWithCorrection' 'subtractNoise' 'subtractNoiseAndCutWithCorrection' 'unknownNoise' 'noCutWithCorrection' };
@@ -231,7 +232,7 @@ else        % all other methods
                     t0idx = 1;
                 end
                 
-                % regression über letzten 10 dB vor noise
+                % regression ueber letzten 10 dB vor noise
                 % regression on raw data
 %                 [del t0IdxRaw]      = min(abs(timeVector-timeVecWin(t0idx)));
 %                 X                   = [timeVector(t0IdxRaw:t1IdxRaw).^0 timeVector(t0IdxRaw:t1IdxRaw)];

@@ -23,7 +23,7 @@ function varargout = ita_negate(a)
 verboseMode  = ita_preferences('verboseMode');  %#ok<NASGU>
 thisFuncStr  = [upper(mfilename) ':'];     %#ok<NASGU>
 
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 
 varargout{1} = -a;
 % end

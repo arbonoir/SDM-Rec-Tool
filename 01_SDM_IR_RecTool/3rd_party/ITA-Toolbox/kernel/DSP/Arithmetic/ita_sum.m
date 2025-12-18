@@ -21,9 +21,9 @@ function varargout = ita_sum(varargin)
 thisFuncStr  = [upper(mfilename) ':'];     %#ok<NASGU>
 
 %% Initialization
-error(nargchk(1,1,nargin));
+narginchk(1,1);
 sArgs        = struct('pos1_data','itaSuper');
-[data,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[data,sArgs] = ita_parse_arguments(sArgs,varargin);
 
 data = sum(data);
 

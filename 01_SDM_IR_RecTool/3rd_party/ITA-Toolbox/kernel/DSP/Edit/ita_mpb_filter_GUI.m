@@ -14,7 +14,7 @@ if nargin == 0 % generate GUI
     ele = 1;
     pList{ele}.description = 'itaAudio';
     pList{ele}.helptext    = 'This is the itaAudio Object for amplification or attenuation';
-    pList{ele}.datatype    = 'itaAudioInUse';
+    pList{ele}.datatype    = 'itaAudio';
     pList{ele}.default     = '';
     
     ele = length(pList) + 1;

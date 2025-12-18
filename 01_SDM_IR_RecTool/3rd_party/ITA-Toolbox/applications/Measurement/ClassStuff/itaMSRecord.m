@@ -253,6 +253,13 @@ classdef itaMSRecord < itaHandle
             result = ita_portaudio(this.nSamples,'InputChannels',this.inputChannels, ...
                 'repeats',1,'singleprecision',singleprecision,'reset', this.reset);
             max_rec_lvl = max(abs(result.timeData),[],1);
+            
+            % add history line
+            commitID = ita_git_commit_id();
+            if ~isempty(commitID)
+                result = ita_metainfo_add_historyline(result,'Measurement',commitID);
+            end
+            
         end
         
         function [result, max_rec_lvl] = run_raw_imc(this)
@@ -263,14 +270,13 @@ classdef itaMSRecord < itaHandle
             % input chain properties, thus yielding the unaltered measurement
             % signal present at the receiving position.
             
-            pause(this.pause);   %#ok<CPROP> % Pause to leave the measurement room e.g.
-            
             % Measurement.
             % Execute as many averages as specified in the measurement
-            % setup.
+            % setup wit a pause before each measurement.
             result = itaAudio([this.averages 1]);
             max_rec_lvl = zeros(this.averages,numel(this.inputChannels));
             for rep_idx = 1:this.averages
+                pause(this.pause); %#ok<CPROP>
                 [result_tmp, max_rec_lvl_tmp] = run_raw(this);
                 if isempty(result_tmp)
                     result = result_tmp;
@@ -278,6 +284,7 @@ classdef itaMSRecord < itaHandle
                 end
                 result(rep_idx) = result_tmp;
                 max_rec_lvl(rep_idx,:) = max_rec_lvl_tmp;
+                
             end
             
             % Level analysis block
@@ -303,6 +310,12 @@ classdef itaMSRecord < itaHandle
             % Write result
             result.comment = [this.comment result.comment];     % Add comment.
             result = ita_metainfo_rm_historyline(result,'all'); % Remove all history lines.
+            
+            % add history line
+            commitID = ita_git_commit_id();
+            if ~isempty(commitID)
+                result = ita_metainfo_add_historyline(result,'Measurement',commitID);
+            end
         end
         
         function [result, max_rec_lvl] = run(this)

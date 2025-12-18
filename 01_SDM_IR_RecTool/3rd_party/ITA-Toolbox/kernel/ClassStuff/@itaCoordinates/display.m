@@ -39,6 +39,8 @@ else
             prefix = '[ r  theta  phi ] = [';
         case 'cyl'
             prefix = '[ rho  phi  z ] = [';
+        case 'pol'
+            prefix = '[ r  alpha  beta ] = [';
     end
     
     % maximum entry

@@ -43,16 +43,13 @@ if source_signal.samplingRate ~= filter_dat.samplingRate
     ita_verbose_info('ITA_CONVOLVE: Sampling Rates do not match, resampling filter!',1);
 end
 
-%% Match channels
-if source_signal.nChannels == 1 && filter_dat.nChannels > 1
-    source_signal = ita_split(source_signal,ones(filter_dat.nChannels,1));
-end
-if source_signal.nChannels > 1 && filter_dat.nChannels == 1
-    filter_dat = ita_split(filter_dat,ones(source_signal.nChannels,1));
-end
-
+%% Check number of channels channels
 if source_signal.nChannels ~= filter_dat.nChannels
-    error('ITA_CONVOLVE: Number of channels do not match');
+    % only a problem if both inputs have more than one channel, fftfilt can
+    % handle the rest
+    if source_signal.nChannels > 1 && filter_dat.nChannels > 1
+        error('ITA_CONVOLVE: Number of channels do not match');
+    end
 end
 
 %% Extend signals
@@ -75,6 +72,8 @@ if ~sArgs.overlap_add %signals have similar length, overlap-add makes no sense
 else % RSC - use overlap-add
     ita_verbose_info('ITA_CONVOLVE:Linear convolution using overlap-add.',2);
     source_signal.timeData = fftfilt(double(filter_dat.timeData),double(source_signal.timeData));
+    % deal with units
+    source_signal.channelUnits(:) = {ita_deal_units(filter_dat.channelUnits{1},source_signal.channelUnits{1},'*')};
 end
 
 %% Add history line

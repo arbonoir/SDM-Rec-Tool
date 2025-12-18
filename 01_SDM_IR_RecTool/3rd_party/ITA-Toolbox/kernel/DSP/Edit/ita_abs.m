@@ -5,10 +5,10 @@ function varargout = ita_abs(varargin)
 %
 %  Syntax: itaAudio = ita_abs(itaAudio)
 %
-%   See also ita_real, ita_abs.
+%   See also ita_real, ita_imag.
 %
 %   Reference page in Help browser 
-%        <a href="matlab:doc ita_imag">doc ita_imag</a>
+%        <a href="matlab:doc ita_abs">doc ita_abs</a>
 
 % <ITA-Toolbox>
 % This file is part of the ITA-Toolbox. Some rights reserved. 
@@ -20,16 +20,15 @@ function varargout = ita_abs(varargin)
 % Created:  27-Feb-2009 
 
 %% Get ITA Toolbox preferences and Function String
-verboseMode  = ita_preferences('verboseMode');  %#ok<NASGU> Use to show additional information for the user
 thisFuncStr  = [upper(mfilename) ':'];     % Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 sArgs        = struct('pos1_data','itaSuper');
-[result,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[result,sArgs] = ita_parse_arguments(sArgs,varargin); 
 
 %% abs
-ita_verbose_info([thisFuncStr 'Using ' result.domain 'domain.'],2);
+ita_verbose_info([thisFuncStr 'Using ' result.domain 'domain.'],0);
 result.data = abs(result.data) ;
 
 %% Add history line

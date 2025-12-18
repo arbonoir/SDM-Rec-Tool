@@ -21,7 +21,7 @@ function [ h ] = ita_make_MF_header(varargin)
 % changing for OOP data files, mpo, 16-Jun-2011
 
 %% Initialization
-error(nargchk(1,2,nargin));
+narginchk(1,2);
 
 if ~isa(varargin{1},'itaAudio')
     error('ITA_MAKE_MF_HEADER: Wrong Input.')

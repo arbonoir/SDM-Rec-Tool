@@ -27,7 +27,7 @@ verboseMode  = ita_preferences('verboseMode');
 
 %% Initialization
 % Number of Input Arguments
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 % Find Audio Data
 if isa(varargin{1},'itaSuper')
     if isTime(varargin{1})

@@ -5,7 +5,7 @@ function varargout = mtimes(varargin)
 % You can find the license for this m-file in the license.txt file in the ITA-Toolbox folder. 
 % </ITA-Toolbox>
 
-error(nargchk(2,2,nargin));
+narginchk(2,2);
 if isa(varargin{1},'itaValue') || isnumeric(varargin{1})
     varargout{1} = ita_amplify(varargin{2},varargin{1});
     return;

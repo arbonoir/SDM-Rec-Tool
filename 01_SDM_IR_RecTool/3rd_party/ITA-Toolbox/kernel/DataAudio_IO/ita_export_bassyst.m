@@ -38,7 +38,7 @@ function ita_export_bassyst(varargin)
 thisFuncStr  = [upper(mfilename) ':'];     % Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-error(nargchk(2,6,nargin,'string'));
+narginchk(2,6);
 sArgs        = struct('pos1_data','itaSuper','pos2_filename','string','limits',[0 22050]);
 [data,filename,sArgs] = ita_parse_arguments(sArgs,varargin); 
 sArgs.limits(2) = min(sArgs.limits(2),max(data.freqVector));

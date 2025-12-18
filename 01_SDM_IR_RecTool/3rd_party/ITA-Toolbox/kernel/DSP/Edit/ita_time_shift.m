@@ -40,7 +40,7 @@ if nargin == 0
     ele = length(pList) + 1;
     pList{ele}.description = 'itaAudio';
     pList{ele}.helptext    = 'This is the itaAudio Object for time windowing';
-    pList{ele}.datatype    = 'itaAudioInUse';
+    pList{ele}.datatype    = 'itaAudio';
     pList{ele}.default     = '';
     
     ele = length(pList) + 1;
@@ -111,7 +111,7 @@ if nargin == 0
 end
 
 %% Initialization and Input Parsing
-% error(nargchk(0,4,nargin,'string'));
+% narginchk(0,4);
 sArgs        = struct('pos1_a','itaAudio','frequencydomain',false);
 [data,sArgs] = ita_parse_arguments(sArgs,varargin(1));
 if nargin == 1 %automatic mode

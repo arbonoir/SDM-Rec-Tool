@@ -6,7 +6,7 @@ function varargout = rdivide(varargin)
 % You can find the license for this m-file in the license.txt file in the ITA-Toolbox folder. 
 % </ITA-Toolbox>
 
-error(nargchk(2,2,nargin));
+narginchk(2,2);
 % is it is const/itaAudio reroute to power and amplify
 if isa(varargin{1},'itaValue') || isnumeric(varargin{1})
    varargout{1} = ita_amplify(varargin{2}^-1,varargin{1});

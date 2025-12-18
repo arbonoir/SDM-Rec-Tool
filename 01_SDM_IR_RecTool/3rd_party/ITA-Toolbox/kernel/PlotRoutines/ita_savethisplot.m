@@ -53,9 +53,9 @@ if nargin == 0 || (nargin == 1 && any(ishandle(varargin{1})))
         newFileStr = 'saved_plot';
     end
     
-    [xx newFileStr xxx] = fileparts(newFileStr); %#ok<NASGU,ASGLU>
+    [xx, newFileStr, xxx] = fileparts(newFileStr); %#ok<NASGU,ASGLU>
     
-    [filename filedir filteridx] = uiputfile( ...
+    [filename, filedir, filteridx] = uiputfile( ...
         {'*.eps;*.pdf;*.png;*.bmp;*.jpg;*tif;*.fig','All Graphic Files (*.eps,*.pdf,*.png,*.bmp,*.jpg,*.tif,*.fig)';...
         '*.eps','Encapsulated PostScript (*.eps)';...
         '*.pdf','Portable Document Format (*.pdf)';...
@@ -69,7 +69,7 @@ if nargin == 0 || (nargin == 1 && any(ishandle(varargin{1})))
     if ~filename
         return;
     end
-    [p1 p2 pext] = fileparts(filename); %#ok<ASGLU>
+    [p1, p2, pext] = fileparts(filename); %#ok<ASGLU>
     if isempty(pext)
         %if no fileext, try to guess from filter index in GUI
         switch filteridx
@@ -93,13 +93,13 @@ if nargin == 0 || (nargin == 1 && any(ishandle(varargin{1})))
     
 elseif nargin == 1 && ischar(varargin{1})
     % only filename given
-    [filedir filename filetype] = fileparts(varargin{1});
+    [filedir, filename, filetype] = fileparts(varargin{1});
     hfig = gcf;
     filename = [filename filetype];
     
 elseif nargin == 2
     % both figure handle and filename given
-    [filedir filename filetype] = fileparts(varargin{2});
+    [filedir, filename, filetype] = fileparts(varargin{2});
     if isempty(filedir)
         filedir  = cd;
     end
@@ -123,7 +123,7 @@ elseif nargin == 2
 else
     % new mode using parse_arguments function
     [hfig,filename,sArgs] = ita_parse_arguments(sArgs,varargin);
-    [filedir filename filetype] = fileparts(filename);
+    [filedir, filename, filetype] = fileparts(filename);
     filename = [filename filetype]; %restore complete filename
 end
 
@@ -132,7 +132,7 @@ if isempty(filedir)
 end
 
 %% split filename and extension
-[filedir_old filename fileext] = fileparts(filename); %#ok<ASGLU>
+[filedir_old, filename, fileext] = fileparts(filename); %#ok<ASGLU>
 
 possibleExtensions = {'','.eps','.pdf','.png','.bmp','.tif','.jpg','.fig'};
 
@@ -193,6 +193,10 @@ if sArgs.withGhostscript % use export_fig
         set(hfig,'Color',oldColor);
     end
 else % use MATLAB
+    
+    figurePosition = get(hfig, 'position');
+    set(hfig, 'paperUnits', 'points', 'papersize', figurePosition(3:4), 'paperPosition', [ 0 0 figurePosition(3:4)]);
+    
     % EPS
     if any(strcmpi(fileext,{'.eps',''}))
         print('-depsc', fullfile(filedir, [filename '.eps']));

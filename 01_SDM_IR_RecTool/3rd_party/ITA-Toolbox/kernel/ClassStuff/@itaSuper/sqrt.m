@@ -6,7 +6,7 @@ function varargout = sqrt(varargin)
 % You can find the license for this m-file in the license.txt file in the ITA-Toolbox folder. 
 % </ITA-Toolbox>
 
-error(nargchk(1,1,nargin));
+narginchk(1,1);
 isfreq = isFreq(varargin{1});
 for ind = 1:numel(varargin{1})
     if isfreq(ind)

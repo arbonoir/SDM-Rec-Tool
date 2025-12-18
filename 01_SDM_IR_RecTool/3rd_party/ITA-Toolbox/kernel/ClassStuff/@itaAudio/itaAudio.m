@@ -23,7 +23,7 @@ classdef itaAudio < itaSuper
     
     properties(Access = private, Hidden = true)
         % here are default values defined
-        mSamplingRate = 44100;
+        mSamplingRate = ita_preferences('samplingRate');
         mSignalType = 'power';   % 'power' / 'energy'
         mEvenSamples = true;
     end
@@ -135,7 +135,10 @@ classdef itaAudio < itaSuper
         end
         
         function this = set.fftDegree(this, value)
-            nSamples    = ita_nSamples(value);
+            if value>31
+                warning('FFT degree higher than 31 are not converted in to number of Samples anymore in itaAudio.setfftDegree! If you did not expect this message, please report to the toolbox support team.');
+            end
+            nSamples    = ita_nSamples(value, 'fftDegree');
             this        = set_nSamples(this, nSamples);
         end
         
@@ -148,6 +151,9 @@ classdef itaAudio < itaSuper
         
         function this = set.trackLength(this, value)
             nSamples = this.samplingRate * double(value);
+            if nSamples<32
+                warning('Warning! Samples numbers smaller than 32 are not converted to FFT degree anymore in itaAudio.nSamples! If you did not expect this message, please report to the toolbox support team.');
+            end
             if isfinite(nSamples)
                 this = set_nSamples(this, nSamples);
             else
@@ -273,13 +279,18 @@ classdef itaAudio < itaSuper
         end
         
         function this = set_nSamples(this, nSamples)
+            if nSamples<32
+                warning('Warning! Samples numbers smaller than 32 are not converted to FFT degree anymore in itaAudio.nSamples! If you did not expect this message, please report to the toolbox support team.');
+            end
             % set nSamples and trim audio time data accordingly
-            nSamples = ita_nSamples(nSamples);
+            nSamples = ita_nSamples(nSamples,'samples');
             if nSamples == this.nSamples
                 return; % nothing to do, length is OK
             elseif nSamples > this.nSamples
                 nToFill = nSamples - this.nSamples;
-                this.timeData = [this.timeData; zeros(nToFill,this.nChannels)];
+%                 this.timeData = [this.timeData; zeros(nToFill,this.nChannels)];
+                % jri: this is _much_ more efficient 
+                this.timeData(nSamples,:) = 0;
                 ita_verbose_info(['I am adding zeros to the data to fill it to nSamples = ' num2str(nSamples)],2);
             else
                 this.timeData = this.timeData(1:nSamples,:);
@@ -445,7 +456,7 @@ classdef itaAudio < itaSuper
         
         function revision = classrevision
             % Return last revision on which the class definition has been changed (will be set automatic by svn)
-            rev_str = '$Revision: 11237 $'; % Please dont change this, will be set by svn
+            rev_str = '$Revision: 12930 $'; % Please dont change this, will be set by svn
             revision = str2double(rev_str(isstrprop(rev_str,'digit')));
         end
         

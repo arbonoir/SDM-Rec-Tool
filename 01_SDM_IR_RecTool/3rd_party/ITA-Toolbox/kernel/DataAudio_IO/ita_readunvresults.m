@@ -63,7 +63,7 @@ function varargout = ita_readunvresults(unvFilename, resNodes, varargin)
 
 %% Initialization
 % Number of Input Arguments
-error(nargchk(2,7,nargin,'string'));
+narginchk(2,7);
 
 % open unv Filename
 [fileID, message] = fopen (unvFilename,'r');

@@ -51,7 +51,7 @@ function varargout=ita_crossfade(varargin)
 
 %% Initialization
 % Number of Input Arguments
-error(nargchk(3,11,nargin,'string'));
+narginchk(3,11);
 
 [data_low,data_high,cfFrequency,filter,SamplingRate,interpolation,nSamples]=parseinput(varargin);
 

@@ -130,7 +130,7 @@ elseif max(size(varargin{1})) > 1 || max(size(varargin{2})) > 1
 end
 
 %% inarg parsing
-error(nargchk(2,2,nargin));
+narginchk(2,2);
 if isa(varargin{1},'itaValue') || isnumeric(varargin{1})
     varargout{1} = ita_amplify(varargin{2},varargin{1});
     return;
@@ -242,7 +242,7 @@ end
 result.data(~isfinite(result.data)) = 0;
 
 %% Add history line
-result = ita_metainfo_rm_historyline (result,'all');
+% result = ita_metainfo_rm_historyline (result,'all');
 varargout{1} = ita_metainfo_add_historyline(result,'itaSuper.mtimes',varargin,'withSubs');
 end
 

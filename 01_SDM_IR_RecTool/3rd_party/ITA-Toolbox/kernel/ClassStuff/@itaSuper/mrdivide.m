@@ -50,7 +50,7 @@ if numel(varargin{1})>1 && (numel(varargin{1}) == numel(varargin{2})) % Multi-In
 end
 
 
-error(nargchk(2,2,nargin));
+narginchk(2,2);
 % is it is const/itaAudio reroute to power and amplify
 if isa(varargin{1},'itaValue') || isnumeric(varargin{1})
    varargout{1} = ita_amplify(varargin{2}^-1,varargin{1});

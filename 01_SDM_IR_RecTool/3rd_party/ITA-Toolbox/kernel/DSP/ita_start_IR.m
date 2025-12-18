@@ -39,6 +39,8 @@ else
     sampleStart = local_search_minPhase_correlation(input,sArgs);
 end
 
+% nonFound = sampleStart == 1;
+% sampleStart(nonFound) = local_search_minPhase_correlation(input.ch(nonFound),sArgs);
 
 %% Local Functions
 function sampleStart = local_search_ISO3382(input,sArgs)
@@ -83,8 +85,9 @@ for idx = 1:input.nChannels
             sampleStart(idx) = 1;
         end
        
-        %my way
-         idx6dBaboveThreshold = find(abs_dat(1:sampleStart(idx)) > sArgs.threshold + 6);
+        % Check if oscillations exist before the last value below threshold
+        % If so, these are part of the RIR and need to be considered.
+        idx6dBaboveThreshold = find(abs_dat(1:sampleStart(idx)) > sArgs.threshold + 6);
         if ~isempty(idx6dBaboveThreshold)
              tmp = find(abs_dat(1:idx6dBaboveThreshold(1)) < sArgs.threshold, 1 ,'last');
              if isempty(tmp) % without this if, the function would generate an error, if the oscillation persists until the first sample
@@ -98,7 +101,7 @@ for idx = 1:input.nChannels
 end
 
 function sampleStart = local_search_minPhase_correlation(input,sArgs)
-%Tamim, Noor Shafiza Mohd; Ghani, Farid (2010): Techniques for optimization in time delay estimation from cross correlation function. In: Int J Eng Technol 10, S. 69ÿ75.
+%Tamim, Noor Shafiza Mohd; Ghani, Farid (2010): Techniques for optimization in time delay estimation from cross correlation function. In: Int J Eng Technol 10, S. 69ï¿½75.
 
 
 % define polynomial order of approximation. Must be at bigger than 1.
@@ -119,6 +122,10 @@ for iChannel = 1:input.nChannels
     y = imag(Y(ind-n:ind+n));
     p = polyfit((-n:n)',y,N);
     r = roots(p);
-    r = r(abs(r) == min(abs(r)));
-    sampleStart(iChannel) = ind + r - input.nSamples;
+    if all(isreal(r))
+        r = r(abs(r) == min(abs(r)));
+        sampleStart(iChannel) = ind + r - input.nSamples;
+    else
+        sampleStart(iChannel) = 0;
+    end
 end

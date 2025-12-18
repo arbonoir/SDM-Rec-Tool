@@ -28,7 +28,7 @@ function varargout = ita_portaudio_monitor(varargin)
 thisFuncStr  = [upper(mfilename) ':'];     % Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-error(nargchk(1,2,nargin,'string'));
+narginchk(1,2);
 modeStr = varargin{1};
 
 figHandle = findobj('UserData','LevelMonitor');
@@ -49,11 +49,11 @@ switch lower(modeStr)
         clf(figHandle)
         h = [];
         guidata(figHandle,h);
-        error(nargchk(2,2,nargin,'string'));
+        narginchk(2,2);
         nOutChannels = varargin{2}(1);
         nInChannels  = varargin{2}(2);
         nChannels = nOutChannels + nInChannels + 1; %sepearation by one zero bar
-        maxValues = -101*ones(nChannels,1);
+        maxValues = minVal*ones(nChannels,1);
         
         set(figHandle,'menubar','none')
         set(figHandle,'NumberTitle','off');
@@ -69,11 +69,11 @@ switch lower(modeStr)
         axesHandle = axes('parent', figHandle, 'Visible','on','OuterPosition',[0 relAxesXPosition(1) 1 relAxesXPosition(2)]);
         %max peak plot
         hold off
-        levelHandle(1) = patch([repmat((1:nChannels)-0.1,[2 1]); repmat((1:nChannels)+0.1,[2 1])],[repmat(minVal,[1 nChannels]); repmat(minVal,[1 nChannels]); repmat(minVal,[1 nChannels]); repmat(minVal,[1 nChannels])],ones(4,nChannels));
+        levelHandle(1) = patch(bsxfun(@plus,1:nChannels,[-0.1;-0.1;0.1;0.1]),repmat(minVal,[4 nChannels]),ones(4,nChannels));
         set(levelHandle(1),'Visible','on')
         hold on
         %level plot
-        levelHandle(2) = patch([repmat((1:nChannels)-0.3,[2 1]); repmat((1:nChannels)+0.3,[2 1])],[repmat(minVal,[1 nChannels]); repmat(minVal,[1 nChannels]); repmat(minVal,[1 nChannels]); repmat(minVal,[1 nChannels])],ones(4,nChannels));
+        levelHandle(2) = patch(bsxfun(@plus,1:nChannels,[-0.3;-0.3;0.3;0.3]),repmat(minVal,[4 nChannels]),ones(4,nChannels));
         set(levelHandle(2),'Visible','on')
         hold on
         
@@ -133,8 +133,8 @@ switch lower(modeStr)
         end
         
     case {'update'}
-        error(nargchk(2,2,nargin,'string'));
-        data      = max([varargin{2}(1:nOutChannels,1); minVal; varargin{2}(nOutChannels+1:end,1); ],minVal); %limit low to minVal
+        narginchk(2,2);
+        data      = max([varargin{2}(1:nOutChannels,1); minVal; varargin{2}(nOutChannels+1:end,1)],minVal); %limit low to minVal
         data = round(data);
         maxValues = max(data,maxValues); %get overall max peaks
         nChannels = nOutChannels + nInChannels + 1;
@@ -160,16 +160,16 @@ switch lower(modeStr)
         % output is never red
         if length(data) >= nOutChannels
             for idx = 1:nOutChannels
-                fvcd(fvd(idx,1:4))         = max(round(-data(idx)./0.5).*0.5,2.5);
-                fvcd_max(fvd_max(idx,1:4)) = max(round(-maxValues(idx)./0.5).*0.5,2.5);
+                fvcd(fvd(idx,1:4))         = max(round(-data(idx)./0.5).*0.5,2);
+                fvcd_max(fvd_max(idx,1:4)) = max(round(-maxValues(idx)./0.5).*0.5,2);
             end
         end
         
         % input
         if length(data) >= nOutChannels + nInChannels
             for idx = nOutChannels+1:length(data) %over nChannels
-                fvcd(fvd(idx,1:4))         = round(-data(idx)./0.5).*0.5 + 2;
-                fvcd_max(fvd_max(idx,1:4)) = round(-maxValues(idx)./0.5).*0.5 + 2;
+                fvcd(fvd(idx,1:4))         = round(-data(idx)./0.5).*0.5 + 1;
+                fvcd_max(fvd_max(idx,1:4)) = round(-maxValues(idx)./0.5).*0.5 + 1;
             end
         end
         set(levelHandle(2),'FaceVertexCData',fvcd)

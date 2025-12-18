@@ -23,14 +23,14 @@ function varargout = ita_plottools_colormap(varargin)
 
 
 %% Initialization and Input Parsing
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 sArgs        = struct('pos1_mode','string');
-[mode,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[mode,sArgs] = ita_parse_arguments(sArgs,varargin); 
 
 %% +++Body - Your Code here+++ 'result' is an audioObj and is given back
 
 switch(lower(mode))
-    case {'jet', 'hsv' 'hot' 'cool' 'spring' 'summer' 'autumn' 'winter' 'gray' 'bone' 'copper' 'pink' 'lines' 'artemis' 'ita_colormap'}
+    case {'jet', 'hsv' 'hot' 'cool' 'spring' 'summer' 'autumn' 'winter' 'gray' 'invertedgraycolormap' 'bone' 'copper' 'pink' 'lines' 'artemis' 'ita_colormap'}
         result = colormap(mode);
     otherwise
         error('mode is not valid')

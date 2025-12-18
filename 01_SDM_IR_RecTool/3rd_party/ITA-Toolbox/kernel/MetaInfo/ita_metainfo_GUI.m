@@ -26,9 +26,9 @@ function varargout = ita_metainfo_GUI(varargin)
 
 
 %% Initialization and Input Parsing
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 sArgs        = struct('pos1_data','itaAudio');
-[data,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[data,sArgs] = ita_parse_arguments(sArgs,varargin); 
 
 %%
 if nargin == 1

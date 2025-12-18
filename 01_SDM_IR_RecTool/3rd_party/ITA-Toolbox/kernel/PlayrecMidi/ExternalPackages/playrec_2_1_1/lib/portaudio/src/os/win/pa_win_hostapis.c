@@ -1,5 +1,5 @@
 /*
- * $Id: pa_win_hostapis.c 1339 2008-02-15 07:50:33Z rossb $
+ * $Id$
  * Portable Audio I/O Library Windows initialization table
  *
  * Based on the Open Source API proposed by Ross Bencina
@@ -26,13 +26,13 @@
  */
 
 /*
- * The text above constitutes the entire PortAudio license; however, 
+ * The text above constitutes the entire PortAudio license; however,
  * the PortAudio community also makes the following non-binding requests:
  *
  * Any person wishing to distribute modifications to the Software is
  * requested to send the modifications to the original developer so that
- * they can be incorporated into the canonical version. It is also 
- * requested that these non-binding requests be included along with the 
+ * they can be incorporated into the canonical version. It is also
+ * requested that these non-binding requests be included along with the
  * license above.
  */
 
@@ -40,13 +40,17 @@
  @ingroup win_src
 
     @brief Win32 host API initialization function table.
-
-    @todo Consider using PA_USE_WMME etc instead of PA_NO_WMME. This is what
-    the Unix version does, we should consider being consistent.
 */
 
+/* This is needed to make this source file depend on CMake option changes
+   and at the same time make it transparent for clients not using CMake.
+*/
+#ifdef PORTAUDIO_CMAKE_GENERATED
+#include "options_cmake.h"
+#endif
 
 #include "pa_hostapi.h"
+
 
 #ifdef __cplusplus
 extern "C"
@@ -58,7 +62,8 @@ PaError PaWinMme_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiInd
 PaError PaWinDs_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex index );
 PaError PaAsio_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex index );
 PaError PaWinWdm_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex index );
-PaError PaWinWasapi_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex index );
+PaError PaWasapi_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex index );
+PaError PaJack_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex index );
 
 #ifdef __cplusplus
 }
@@ -68,33 +73,33 @@ PaError PaWinWasapi_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApi
 PaUtilHostApiInitializer *paHostApiInitializers[] =
     {
 
-#ifndef PA_NO_WMME
+#if PA_USE_WMME
         PaWinMme_Initialize,
 #endif
 
-#ifndef PA_NO_DS
+#if PA_USE_DS
         PaWinDs_Initialize,
 #endif
 
-#ifndef PA_NO_ASIO
+#if PA_USE_ASIO
         PaAsio_Initialize,
 #endif
 
-/*
-#ifndef PA_NO_WASAPI
-		PaWinWasapi_Initialize,
+#if PA_USE_WASAPI
+        PaWasapi_Initialize,
 #endif
 
-#ifndef PA_NO_WDMKS
-       PaWinWdm_Initialize,
+#if PA_USE_WDMKS
+        PaWinWdm_Initialize,
 #endif
-*/
 
-        PaSkeleton_Initialize, /* just for testing */
+#if PA_USE_JACK
+        PaJack_Initialize,
+#endif
+
+#if PA_USE_SKELETON
+        PaSkeleton_Initialize, /* just for testing. last in list so it isn't marked as default. */
+#endif
 
         0   /* NULL terminated array */
     };
-
-
-int paDefaultHostApiIndex = 0;
-

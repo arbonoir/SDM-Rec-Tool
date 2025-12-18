@@ -44,7 +44,7 @@ insertVarCell        = varargin(2:end);
 nInsertVar           = numel(insertVarCell);
 nInsertVarElements   = zeros(nInsertVar,1);
 currentInsertVarCell = cell(nInsertVar,1);
-insertVarIsChar     =  zeros(nInsertVar,1);
+insertVarIsChar      = zeros(nInsertVar,1);
 
 
 %% check size of input vectors
@@ -65,13 +65,12 @@ for iInsertVar = 1:nInsertVar
             currentInsertVarCell{iInsertVar}  = cell2mat(currentInsertVarCell{iInsertVar} );
         end
    end
-   
 end
 
 nStringsOut = max(nInsertVarElements);
 
 if any( (nInsertVarElements ~= nStringsOut) & (nInsertVarElements ~= 1 ))
-    error('wrong sizes of input vars')
+    error('Wrong sizes of input variables.')
 end
 allInterVarThatChanges = find(nInsertVarElements ~= 1);
 

@@ -27,13 +27,13 @@ function varargout = ita_normxcorr2(varargin)
 thisFuncStr  = [upper(mfilename) ':'];     % Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-error(nargchk(1,2,nargin,'string'));
+narginchk(1,2);
 if nargin == 1 % autocorrelation
    varargin = [varargin,varargin]; 
 end
     
 sArgs        = struct('pos1_data1','itaSuper','pos2_data2','itaSuper');
-[data1,data2,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[data1,data2,sArgs] = ita_parse_arguments(sArgs,varargin); 
 
 %% check consistency
 if ~strcmpi(data1.domain,data2.domain) || data1.nBins ~= data2.nBins || prod(data1.dimensions) ~= prod(data2.dimensions)

@@ -5,5 +5,5 @@ function ita_menucallback_SaveThisPlotGLE(hObject, event)
 % You can find the license for this m-file in the license.txt file in the ITA-Toolbox folder. 
 % </ITA-Toolbox>
 
-ita_savethisplot_gle();
+ita_savethisplot_gle('fgh', ita_guisupport_getParentFigure(hObject))
 end

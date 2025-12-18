@@ -13,6 +13,9 @@ function varargout = ita_plottools_colortable(varargin)
 %  Call: color_out = ita_plottools_colortable(N) gives the Nth color
 %  Call: colorTableMatrix = ita_plottools_colortable('ita') Sets a colororder defined in this file
 %  Call: colorTableMatrix = ita_plottools_colortable('winter(N)') If you have only N channels %
+%  Call: ita_plottools_colortable('custom') to retain previous settings
+%        best done by calling: ita_preferences('colortablename','custom');
+%        before the toolbox plot functions
 %   Then you can set it as default with set(0,'DefaultAxesColorOrder',colorTableMatrix)
 %
 %   See also ita_toolbox_setup.
@@ -30,7 +33,7 @@ function varargout = ita_plottools_colortable(varargin)
 % Created:  05-Sep-2008
 
 %% Initialization
-error(nargchk(0,1,nargin,'string'));
+narginchk(0,1);
 if nargin == 0
     varargin{1} = 0;
 end
@@ -39,9 +42,9 @@ end
 PlotSettings_colorTable = ita_preferences('colorTableName');
 
 %% Defining all the colors
-colorTable(1,:) = [1     0     0];
-colorTable(2,:) = [0.4000    0.4000    0.4000];
-colorTable(3,:) = [0     0     1];
+colorTable(2,:) = [1     0     0];
+colorTable(3,:) = [0.4000    0.4000    0.4000];
+colorTable(1,:) = [0     0     1];
 colorTable(4,:) = [1     0     1];
 colorTable(5,:) = [1.0000    0.4000         0];
 colorTable(6,:) = [0.2205    0.8775    0.7276];
@@ -92,6 +95,11 @@ if nargin == 1
             set(0,'DefaultAxesLineStyleOrder','-|-.|--|:')
             ita_verbose_info('ITA_PLOTTOOLS_COLORTABLE:Setting ITA Color Order.',2);
             result = [0 0 0];
+        elseif strcmpi(varargin{1},'custom')
+            colorTableName = 'custom';
+%             set(0,'DefaultAxesLineStyleOrder','-|-.|--|:')
+            ita_verbose_info('ITA_PLOTTOOLS_COLORTABLE:Setting Custom Color Order.',2);
+            result = get(0,'defaultAxesColorOrder');
         else
             colorTableName = varargin{1};
             hfig = figure;
@@ -121,7 +129,9 @@ ita_preferences('colortablename', colorTableName);
 % ita_verbose_info('ITA_PLOTTOOLS_COLORTABLE:Preferences Set.',1);
 
 %% Set it as default
-set(0,'DefaultAxesColorOrder',colorTable)
+if ~strcmp(colorTableName,'custom')
+    set(0,'DefaultAxesColorOrder',colorTable)
+end
 
 %% Find output parameters
 varargout(1) = {result};

@@ -60,25 +60,26 @@ function varargout = ita_smooth(audioObject, varargin)
 
 
 thisFuncStr  = [upper(mfilename) ':'];
-persistent smooth_helper
-if isempty(smooth_helper)
-    
-    if exist('smooth.m','file')
-        smooth_helper = @smooth;
-        smooth_opt = [];
-        ita_verbose_info('Using MATLAB smooth',1);
-    else
-        smooth_helper = @ita_smooth_helper;
-        ita_verbose_info('Using lowlevel Toolbox Smooth',1);
-        
-    end
+
+% Check if 
+if exist('smooth.m','file')
+    smooth_helper = @smooth;
+    smooth_opt = [];
+    ita_verbose_info('Using MATLAB smooth',1);
+else
+    smooth_helper = @ita_smooth_helper;
+    smooth_opt = cell(1);
+    ita_verbose_info('Using lowlevel Toolbox Smooth',1);
 end
 
 %% READ INPUT ARGUMENTS
-error(nargchk(1,6,nargin,'string'));
+narginchk(1,6);
 
-if nargin >= 4 && strcmp(func2str(smooth_helper),'smooth');
+if nargin >= 4 && strcmp(func2str(smooth_helper),'smooth')
     smooth_opt = varargin(4:end);
+    varargin(4:end) = [];
+else
+    ita_verbose_info([thisFuncStr 'No Curve Fitting Toolbox. Additional arguments cannot be processed.'],1)
     varargin(4:end) = [];
 end
 
@@ -312,7 +313,7 @@ for ind = 1:numel(audioObject)
                 case 'abs+phase'
                     for k=1:channels
                         SignalCentAbs    = interp1(freq,   abs(audioObj.freqData(:,k)), fCent);
-                        SignalCentPhase  = interp1(freq, angle(audioObj.freqData(:,k)), fCent); 
+                        SignalCentPhase  = interp1(freq, unwrap(angle(audioObj.freqData(:,k))), fCent); 
                         signalCentSmoothAbs   = feval(smooth_helper, SignalCentAbs  , span, smooth_opt{:});
                         signalCentSmoothPhase = feval(smooth_helper, SignalCentPhase, span, smooth_opt{:});
                         absOut           = interp1(fCent(2:end), signalCentSmoothAbs(2:end), freq(2:end), 'spline');
@@ -361,7 +362,6 @@ for ind = 1:numel(audioObject)
             absOut = zeros(nBins,channels);
             phaseOut = zeros(nBins,channels);
             delayOut = zeros(nBins,channels);
-            out = zeros(nBins,channels);
             
             switch lower(dataType)
                 case 'real'
@@ -415,7 +415,7 @@ for ind = 1:numel(audioObject)
                 
                 case 'abs+phase'
                     signalAbs = abs(audioObj.freqData);
-                    signalPhase = angle(audioObj.freqData);
+                    signalPhase = unwrap(angle(audioObj.freqData));
                     for k=1:nBins
                         absOut(k,:) = 1./(upperBoundaryBins(k)-lowerBoundaryBins(k)+1) .* ...
                             sum(signalAbs(lowerBoundaryBins(k):upperBoundaryBins(k),:), 1);

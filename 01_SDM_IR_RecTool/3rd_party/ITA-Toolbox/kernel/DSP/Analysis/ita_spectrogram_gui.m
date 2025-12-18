@@ -30,8 +30,8 @@ function  ita_spectrogram_gui(varargin)
 
 
 %% Initialization and Input Parsing
-sArgs        = struct('pos1_data','itaAudio', 'figure_handle', [], 'axes_handle', []);
-[input, sArgs ] = ita_parse_arguments(sArgs,varargin);
+sArgs          = struct('pos1_data','itaAudio', 'figure_handle', [], 'axes_handle', []);
+[input, sArgs] = ita_parse_arguments(sArgs,varargin);
 
 %%
 if isempty(sArgs.axes_handle) % create new figure with axes

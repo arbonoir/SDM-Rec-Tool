@@ -109,7 +109,7 @@ for idx = 1:numel(MenuList)
     switch(MenuList{idx}.type)
         case {'function' 'submenu'}
             if ~isfield(MenuList{idx},'parent') || isempty(MenuList{idx}.parent)
-                hList.(name) = uimenu('Label',MenuList{idx}.text,'UserData','ITA-MENU','callback','ita_main_window(gcf)');
+                hList.(name) = uimenu('Label',MenuList{idx}.text,'UserData','ITA-MENU');%,'callback','ita_main_window(gcf)');
             else
                 parenthandle = hList.(parentCell{idx});
                 hList.(name) = uimenu(parenthandle,'Label',MenuList{idx}.text,...
@@ -117,27 +117,33 @@ for idx = 1:numel(MenuList)
             end
         case {'varlist'}
             [List, varStruct ,CellList] = ita_guisupport_getworkspacelist;
-            hList.(name) = uimenu('Label',MenuList{idx}.text,'UserData','ITA-MENU','callback','ita_main_window(gcf)');
+            hList.(name) = uimenu('Label',MenuList{idx}.text,'UserData','ITA-MENU');
             uimenu(hList.(name),'Label','Refresh','Callback','ita_menu()','UserData','ITA-MENU');
             separator = 'on';
             %uimenu(hList.(name),'Label','-------');
+            audioObj = getappdata(fhandle, 'audioObj');
+% %             if isempty(audioObj)
+% %                 currentFileName = '';
+% %             else
+% %                 currentFileName = audioObj.fileName;
+% %             end
             for idvar = 1:size(CellList,1)
-                if strcmp(CellList{idvar,1},ita_inuse());
-                    checkstate = 'on';
-                else
+% %                 if strcmp(CellList{idvar,1}, currentFileName);
+% %                     checkstate = 'on';
+% %                 else
                     checkstate = 'off';
-                end
+% %                 end
                 uimenu(hList.(name),'Label',CellList{idvar,2},'Callback',@ita_menucallback_varselect,...
                     'UserData',CellList{idvar,1},'Check',checkstate,'Separator',separator);
                 separator = 'off';
             end
-            %uimenu(hList.(name),'Label','-------');
-            uimenu(hList.(name),'Label','Clear','Callback','ita_clear_workspace(); ita_menu();','Label','Rename ANS','Callback','ita_menucallback_RenameANS; ita_menu();' ,'Separator','on','UserData','ITA-MENU');
+            uimenu(hList.(name),'Label','Export current variable to workspace','Callback','ita_menucallback_ExportToWorkspace;' ,'Separator','on','UserData','ITA-MENU');
+%              uimenu(hList.(name),'Separator','on','UserData','ITA-MENU');
         case {'domainlist'}
             list = ita_guisupport_domainlist(sArgs.type);
-            hList.(name) = uimenu('Label',MenuList{idx}.text,'UserData','ITA-MENU','callback','ita_main_window(gcf)');
+            hList.(name) = uimenu('Label',MenuList{idx}.text,'UserData','ITA-MENU');%,'callback','ita_main_window(gcf)');
             for idvar = 1:numel(list)
-                if strcmpi(list{idvar}.name,ita_guisupport_currentdomain());
+                if strcmpi(list{idvar}.name, ita_guisupport_currentdomain());
                     checkstate = 'on';
                 else
                     checkstate = 'off';

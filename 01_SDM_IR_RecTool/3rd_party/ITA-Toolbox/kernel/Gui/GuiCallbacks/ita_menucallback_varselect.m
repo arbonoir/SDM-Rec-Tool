@@ -7,9 +7,12 @@ function ita_menucallback_varselect(hObject, eventdata)
 % </ITA-Toolbox>
 
 varname = get(hObject,'UserData');
-ita_main_window('handle',gcf);
-ita_inuse(varname);
-clf(ita_main_window);
-ita_menu('handle',ita_main_window);
-ita_getfrombase();
+
+audio = evalin('base', varname);
+audio.fileName = varname;
+
+fgh = ita_guisupport_getParentFigure(hObject);
+setappdata(fgh, 'audioObj', audio)
+ita_guisupport_updateGUI(fgh)
 end
+

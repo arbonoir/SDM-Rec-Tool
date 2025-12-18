@@ -35,7 +35,7 @@ verboseMode  = ita_preferences('verboseMode');  %#ok<NASGU> Use to show addition
 thisFuncStr  = [upper(mfilename) ':'];     % Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-error(nargchk(1,4,nargin,'string'));
+narginchk(1,4);
 sArgs        = struct('pos1_data','itaAudioFrequency','distance',[],'normalized',false);
 [data,sArgs] = ita_parse_arguments(sArgs,varargin);
 
@@ -54,7 +54,7 @@ end
 channelNames = data.channelNames;
 data = ita_split(data,1) - ita_split(data,2);
 data = ita_integrate(data,'domain','freq');
-denum = (ita_constants('rho_0') * sArgs.distance);
+denum = (ita_constants('rho_0') * itaValue(double(sArgs.distance),'m'));
 data = data ./ denum;
 
 if sArgs.normalized

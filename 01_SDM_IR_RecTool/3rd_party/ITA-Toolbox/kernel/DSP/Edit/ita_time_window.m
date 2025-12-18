@@ -25,7 +25,7 @@ function [ varargout ] = ita_time_window( varargin )
 %       dc (false) - dc correction after m�ller (bma)
 %
 %   Example:
-%      sweep  = ita_generate('expsweep',[2 22000],44100,16);
+%      sweep  = ita_generate_sweep('freqRange',[2 22000]);
 %      result = ita_time_window(sweep,[2,1, 19,20],@hann,'time')
 %        a left sided Hamming window is applied to the sweep between 1 and
 %        2 seconds. The order of the interval is 2,1 and not 1,2. This is
@@ -94,7 +94,7 @@ if nargin == 0
     ele = length(pList) + 1;
     pList{ele}.description = 'itaAudio';
     pList{ele}.helptext    = 'This is the itaAudio Object for time windowing';
-    pList{ele}.datatype    = 'itaAudioInUse';
+    pList{ele}.datatype    = 'itaAudio';
     pList{ele}.default     = '';
     
     ele = length(pList) + 1;
@@ -189,7 +189,7 @@ defaultUsedUnit   = 'samples';
 defaultWindowType = @hann; %@rectwin; rectwin does not make sense as standard
 
 %% Initialization and Input Parsing
-error(nargchk(1,20,nargin)); %#ok<NCHKN>
+narginchk(1,20); 
 
 % Where is the window-function handle used
 handle_pos = 0;
@@ -280,7 +280,6 @@ else
     symmetric_flag = sArgs.symmetric;
     crop_flag = sArgs.crop;
     extract_flag = sArgs.extract;
-    audioObj = sArgs.audioObj;
     shiftsamples = 0; %Used for adaptive windows
     
     if ~isempty(sArgs.windowtype) && ~strcmpi(sArgs.windowtype,'anything')
@@ -288,9 +287,6 @@ else
     else
         windowType = defaultWindowType;
     end
-    
-    % clear sArgs; %Clean up as we don't need this anymore and it could be
-    % quite big : pdi: this is not necessary anymore, better input parsing.
     
     if nargin > 1 && numel(varargin{2}) == 1 % then it is the exponantial window
         time_tau = varargin{2};
@@ -370,7 +366,7 @@ else
     
     %% Generate Window Vector
     if ischar(windowType) && isequal(windowType, 'expo')
-        time_vec        = (0:(size(audioObj.dat,2)-1)) ./ audioObj.samplingRate; %in seconds
+        time_vec        = audioObj.timeVector; %in seconds
         windowVector    = exp(- time_vec ./ time_tau);
     else % other normal windows
         if ~extract_flag
@@ -438,7 +434,7 @@ else
     
     %% apply the window
     windowVector = windowVector(:);
-    timeData = bsxfun(@times, audioObj.timeData, windowVector);
+    timeData     = bsxfun(@times, audioObj.timeData, windowVector);
     
     % correct DC component (from Diss. Swen Mueller, pg189) - it is the same
     % is shifting the DC of the raw data before windowing

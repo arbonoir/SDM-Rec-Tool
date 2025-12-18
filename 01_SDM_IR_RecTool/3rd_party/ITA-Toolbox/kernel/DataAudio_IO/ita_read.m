@@ -115,10 +115,11 @@ for idx = 1:numel(filenameList)
     filename = filenameList{idx};
     
     [junk, name, fileExt] = fileparts(filename);
-    
+    fileTypeKnown = 0;
     for iFiles = 1:nFiles
         if strcmpi(extensionMap{iFiles,1},fileExt)
             % check for right extension
+            fileTypeKnown = 1;
             read_file = str2func(extensionMap{iFiles,3});
             tmp = read_file(filename, sArgs{:});
             
@@ -141,7 +142,11 @@ for idx = 1:numel(filenameList)
             end
         end
     end
+    if fileTypeKnown == 0
+        error('ITA_READ:UnkownFiletype',sprintf('ITA_READ: Unknown filetype: %s',fileExt));
+    end
 end
+
 
 %% Set Output
 %  If user gave the same number of outputs as files read, set each file to
@@ -318,6 +323,6 @@ end
 
 % check for no input
 if isempty(filenameList);
-    error('ITA_READ:NoInputFile','Oh Lord, please give me some files.');
+    error('ITA_READ:NoInputFile','File not found.');
 end
 end

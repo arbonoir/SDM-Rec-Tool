@@ -100,12 +100,12 @@ if isempty(itamenu_cache)
     itamenu{idx}.parent         = '';
     itamenu{idx}.accelerator    = '';
     
-    idx = idx+1;
-    itamenu{idx}.type           = 'function';
-    itamenu{idx}.text           = 'Delete Current Object';
-    itamenu{idx}.parent         = 'Workspace';
-    itamenu{idx}.accelerator    = '';
-    
+% % %     idx = idx+1;
+% % %     itamenu{idx}.type           = 'function';
+% % %     itamenu{idx}.text           = 'Delete Current Object';
+% % %     itamenu{idx}.parent         = 'Workspace';
+% % %     itamenu{idx}.accelerator    = '';
+% % %     
     %% Domain - Now with Accelerators (defined in ita_guisupport_domainlist)
     idx = idx+1;
     itamenu{idx}.type = 'domainlist'; % edit ita_guisupport_domainlist.m for details
@@ -247,7 +247,7 @@ if isempty(itamenu_cache)
         
     idx = idx+1;
     itamenu{idx}.type = 'function';
-    itamenu{idx}.text = 'Uncle Hilbert';
+    itamenu{idx}.text = 'Minimumphase';
     itamenu{idx}.parent = 'Edit';
     itamenu{idx}.accelerator = '';
     
@@ -296,6 +296,17 @@ if isempty(itamenu_cache)
     
     idx = idx+1;
     itamenu{idx}.type   = 'function';
+    itamenu{idx}.text   = 'A-Weighting';
+    itamenu{idx}.parent = 'Filtering';
+    itamenu{idx}.separator = true;
+    
+    idx = idx+1;
+    itamenu{idx}.type   = 'function';
+    itamenu{idx}.text   = 'C-Weighting';
+    itamenu{idx}.parent = 'Filtering';
+    
+    idx = idx+1;
+    itamenu{idx}.type   = 'function';
     itamenu{idx}.text   = 'Fractional Octave Band Levels';
     itamenu{idx}.parent = 'Filtering';
     
@@ -337,12 +348,17 @@ if isempty(itamenu_cache)
     
     idx = idx+1;
     itamenu{idx}.type   = 'function';
-    itamenu{idx}.text   = 'Batch Processor';
+    itamenu{idx}.text   = 'Input Channel Monitor';
     itamenu{idx}.parent = 'Tools';
     
     idx = idx+1;
     itamenu{idx}.type   = 'function';
     itamenu{idx}.text   = 'Frequency Generator';
+    itamenu{idx}.parent = 'Tools';
+    
+        idx = idx+1;
+    itamenu{idx}.type   = 'function';
+    itamenu{idx}.text   = 'Batch Processor';
     itamenu{idx}.parent = 'Tools';
     
     
@@ -355,11 +371,6 @@ if isempty(itamenu_cache)
     idx = idx+1;
     itamenu{idx}.type = 'function';
     itamenu{idx}.text = 'Show Shortcuts';
-    itamenu{idx}.parent = 'Help';
-    
-    idx = idx+1;
-    itamenu{idx}.type = 'function';
-    itamenu{idx}.text = 'Open Getting Started PDF';
     itamenu{idx}.parent = 'Help';
     
     idx = idx+1;

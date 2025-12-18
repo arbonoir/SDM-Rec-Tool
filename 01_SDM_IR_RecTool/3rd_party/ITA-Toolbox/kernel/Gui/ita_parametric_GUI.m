@@ -53,11 +53,9 @@ function varargout = ita_parametric_GUI(varargin)
 ita_check4toolboxsetup();
 
 %% Get ITA Toolbox preferences and Function String
-thisFuncStr  = [upper(mfilename) ':'];     % Use to show warnings or infos in this functions
 
-for idxn = 1:nargout
-    varargout{idxn} = [];
-end
+varargout = cell(nargout,1);
+
 if nargout >= 1
     varargout{1} = 'exitItaParametricGUI';
 end
@@ -72,9 +70,9 @@ end
 %name  = varargin{2}; %name of window
 
 sArgs = struct('pos1_pList','cell','pos2_name','char','wait','on','ita_menu','off',...
-    'ita_menu_disable',cell(1),'logo','ita_toolbox_logo.jpg','backgroundlogo','','logo2','','return_handles',false,'fgh',[],'position',[]);
+    'ita_menu_disable',cell(1),'logo','ita_toolbox_logo.png','backgroundlogo','','logo2','','return_handles',false,'fgh',[],'position',[]);
 sArgs.buttonnames = {'Cancel','Okay'};
-error(nargchk(2,2*numel(fields(sArgs)),nargin,'string'));
+narginchk(2,2*numel(fields(sArgs)));
 [pList, name, sArgs] = ita_parse_arguments(sArgs,varargin);
 
 %% List of Prameters
@@ -219,14 +217,30 @@ for idx  = 1:n %#ok<FXUP>
                 pos = [left_space+130 height-10-(idx+linesoffset)*(h_textbox+3)-10 60 40];
                 set(gca,'Units','pixel', 'Position', pos);
             catch %#ok<CTCH>
-                ita_verbose_info([thisFuncStr 'Sorry picture did not work.',0]);
+                ita_verbose_info('Sorry picture did not work.',0);
             end
-        case {'itaAudio', 'itaAudioInUse'}
-            if strcmpi(type,'itaAudioInUse')
-                defaultname = ita_inuse();
+        case {'itaAudio', 'itaAudioFix' }
+            
+            if strcmpi(type, 'itaAudioFix')
+                objectEnabled = 'off';
+            
+                comment = pList{idx}.default.comment;
+                if length(comment) > 20
+                    comment = [comment(1:20) '...'];
+                end
+                list = ['Object in GUI' ' (' comment ')|'];
+                ch_available = ita_sprintf('Ch %i - %s',1:pList{idx}.default.nChannels, pList{idx}.default.channelNames);
             else
-                defaultname = pList{idx}.default;
+                objectEnabled = 'on';
+                if isfield(pList{idx},'class') && ~isempty(pList{idx}.class)
+                    list = ita_guisupport_getworkspacelist('class',pList{idx}.class);
+                else
+                    list = ita_guisupport_getworkspacelist();
+                end
+                ch_available = [];
             end
+            
+            defaultname = pList{idx}.default;
             try % Find defaultindex for popup-menu
                 var = evalin('base',defaultname); % Try to get this variable
                 comment     = var.comment;
@@ -249,14 +263,10 @@ for idx  = 1:n %#ok<FXUP>
                     pList{idx}.defaultchannels = [];
                 end
             end
-            if isfield(pList{idx},'class') && ~isempty(pList{idx}.class)
-                list = ita_guisupport_getworkspacelist('class',pList{idx}.class);
-            else
-                list = ita_guisupport_getworkspacelist();
-            end
-                
-                
-
+            
+            
+            
+            
             f.(ita_guisupport_removewhitespaces(pList{idx}.description)) = uicontrol(...
                 'Parent', hFigure, ...
                 'Position',[left_space height-10-(idx+linesoffset)*(h_textbox+3) width_itaAudioDD h_textbox],...
@@ -267,6 +277,7 @@ for idx  = 1:n %#ok<FXUP>
                 'HorizontalAlignment','right',...
                 'Callback',@refreshitaAudiopopups,...
                 'UserData',list,...
+                'Enable', objectEnabled, ...
                 'Style', 'popup');
             h.(ita_guisupport_removewhitespaces(pList{idx}.description)) = uicontrol(...
                 'Parent', hFigure, ...
@@ -275,8 +286,9 @@ for idx  = 1:n %#ok<FXUP>
                 'FontSize',fontsize,...
                 'BackgroundColor',[1 1 1],...
                 'HorizontalAlignment','left',...
-                'Style', 'edit');
-            userdata = {h.(ita_guisupport_removewhitespaces(pList{idx}.description)), f.(ita_guisupport_removewhitespaces(pList{idx}.description)), list};
+                'Style', 'edit', ...
+                'TooltipString', 'Select Channels');
+            userdata = {h.(ita_guisupport_removewhitespaces(pList{idx}.description)), f.(ita_guisupport_removewhitespaces(pList{idx}.description)), list, ch_available};
             uicontrol(...
                 'Parent', hFigure, ...
                 'Position',[button_space  height-10-(idx+linesoffset)*(h_textbox+3) 100 button_height],...
@@ -309,7 +321,8 @@ for idx  = 1:n %#ok<FXUP>
                 'FontSize',fontsize,...
                 'BackgroundColor',[1 1 1],...
                 'HorizontalAlignment','left',...
-                'Style', 'edit');
+                'Style', 'edit', ...
+                'TooltipString', 'Type new varianle name');
             
         case {'path' 'getfile' 'setfile'}
             if isfield(pList{idx},'filter')
@@ -589,7 +602,7 @@ for idx  = 1:n %#ok<FXUP>
                 'Value',defaultindex,...
                 'UserData',pList{idx}.list);
         otherwise
-            error([thisFuncStr ' Sorry, I dont know that datatype: ' pList{idx}.datatype])
+            error([' Sorry, I dont know that datatype: ' pList{idx}.datatype])
     end
 end
 
@@ -664,24 +677,28 @@ end
         for idx = 1:n %#ok<FXUP>
             type = pList{idx}.datatype;
             switch(type)
-                case {'itaAudio','itaAudioInUse'}
+                case {'itaAudio'}
                     var_idx = get(f.(ita_guisupport_removewhitespaces(pList{idx}.description)),'Value');
                     all_var = get(f.(ita_guisupport_removewhitespaces(pList{idx}.description)),'String');
                     var = all_var(var_idx,:);
                     var = var(1:findstr(var,' ')); %(var~=' ');% delete spaces in string
                     var = ita_getfrombase(var);
+                    
                     channels = get(h.(ita_guisupport_removewhitespaces(pList{idx}.description)),'String');
-                    %channels = channels(channels~=',');
-                    %channels = channels(channels~=' ');
                     ch_vector = str2num(channels); %#ok<ST2NM>
-                    %for jdx = 1:length(channels)
-                    %    ch_vector(jdx) = str2double(channels(jdx)); %#ok<AGROW>
-                    %end
                     if ~isempty(ch_vector) && ~any(isnan(ch_vector))
                         ch_vector(ch_vector>var.nChannels) = []; %Remove ChannlNumbers that dont exist
                         var = ita_split(var,ch_vector);
                     end
+                case 'itaAudioFix'
+                    var = pList{idx}.default;
                     
+                    channels = get(h.(ita_guisupport_removewhitespaces(pList{idx}.description)),'String');
+                    ch_vector = str2num(channels); %#ok<ST2NM>
+                    if ~isempty(ch_vector) && ~any(isnan(ch_vector))
+                        ch_vector(ch_vector>var.nChannels) = []; %Remove ChannlNumbers that dont exist
+                        var = ita_split(var,ch_vector);
+                    end
                 case {'itaAudioResult'}
                     var_idx = get(f.(ita_guisupport_removewhitespaces(pList{idx}.description)),'Value');
                     all_var = get(f.(ita_guisupport_removewhitespaces(pList{idx}.description)),'String');
@@ -702,7 +719,6 @@ end
                         savename = 'ans';
                     end
                     var = savename;
-                    ita_inuse(var);
                     
                 case {'int','double','int_result_button','int_long','double_long'}
                     z = get(h.(ita_guisupport_removewhitespaces(pList{idx}.description)),'String');
@@ -760,41 +776,36 @@ end
     end
 
     function SelChannelButton(hObject,eventdata)
-        %pdi,rsc
         userdata     = get(hObject,'UserData');
+        ch_available= userdata{4};
         handle_text  = userdata{1};
         
-        handle_popup = userdata{2};
-        
-        var_idx = get(handle_popup,'Value'); %index
-        var_list = userdata{3};
-        var_name = popup_index_to_string(var_list, var_idx);
-        
-        var_name = var_name(1:findstr(var_name,' ')); %(var~=' ');% delete spaces in string
-        
-        %var = evalin('base' ,var_name);
-        var = ita_getfrombase(var_name);
-        
-        if ~isempty(var)
-            ch_available = var.channelNames;
-            for idxch  = 1:var.nChannels
-                ch_available{idxch} = ['Ch ' int2str(idxch) ' - ' ch_available{idxch}];
+        if isempty(ch_available)     % popup with all objects from workspace
+            handle_popup = userdata{2};
+            var_list = userdata{3};
+            var_idx = get(handle_popup,'Value'); %index
+            var_name = popup_index_to_string(var_list, var_idx);
+            var_name = var_name(1:findstr(var_name,' ')); % delete spaces in string
+            var = ita_getfrombase(var_name);
+            
+            if isempty(var)
+                set(handle_text,'String','')
+                return
             end
             
-            ch_select = str2num(get(handle_text,'String')); %#ok<ST2NM>
-            if isempty( ch_select)
-                ch_select = 1:var.nChannels;
-            end
-            
-            [index] = listdlg('Name','Select Channels',...
-                'PromptString','Select channels:',...
-                'SelectionMode','multiple',...
-                'ListString',ch_available,'InitialValue',ch_select);
-            index = num2str(index);
-        else
-            index = '';
+            ch_available = ita_sprintf('Ch %i - %s',1:var.nChannels, var.channelNames);
         end
-        set(handle_text,'String',index);
+        ch_select = str2num(get(handle_text,'String')); %#ok<ST2NM>
+        if isempty( ch_select)
+            ch_select = 1:numel(ch_available);
+        end
+        
+        [index] = listdlg('Name','Select Channels',...
+            'PromptString','Select channels:',...
+            'SelectionMode','multiple',...
+            'ListString',ch_available,'InitialValue',ch_select);
+
+        set(handle_text,'String',num2str(index));
     end
 
     function BrowseCallback(hObject,eventdata)

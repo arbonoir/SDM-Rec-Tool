@@ -3,11 +3,9 @@ function varargout = ita_getfrombase(varargin)
 %
 %  Syntax:
 %   audioObj = ita_getfrombase(name) - get var with that name
-%   audioObj = ita_getfrombase()     - get var last used (as returned by ita_inuse())
-%   ita_getfrombase(name)            - plot var using ita_plot, plots into ita_main_window
 %   
 %   
-%   See also: ita_inuse, ita_setinbase.
+%   See also: ita_setinbase.
 %
 %   Reference page in Help browser 
 %        <a href="matlab:doc ita_getfrombase">doc ita_getfrombase</a>
@@ -23,25 +21,16 @@ function varargout = ita_getfrombase(varargin)
 
 %% Get ITA Toolbox preferences and Function String
 verboseMode  = ita_preferences('verboseMode'); %Use to show additional information for the user
-thisFuncStr  = [upper(mfilename) ':'];     %#ok<NASGU> Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-error(nargchk(0,1,nargin,'string'));
 
-if nargin > 0
-    sArgs        = struct('pos1_name','char');
-    [name,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
-    if isempty(name)
-        name = ita_inuse();
-    end
-else
-    name = ita_inuse();
-end
+sArgs        = struct('pos1_name','char');
+[name,sArgs] = ita_parse_arguments(sArgs,varargin);
+
 
 %% Special handling of '-- All --'
 if strcmpi(name,'-- all --')
-    [egal egal2 name] = ita_guisupport_getworkspacelist;
-    name = name(1:end-1,1);
+    [egal, egal2, name] = ita_guisupport_getworkspacelist;
 end
 
 %% +++Body - Your Code here+++ 'result' is an audioObj and is given back
@@ -64,14 +53,10 @@ catch %#ok<CTCH>
 end
 
 
-%% Find output parameters
-if nargout == 0 %User has not specified a variable
-    % Do plotting?
-    ita_plot_gui();
-else
-    % Write Data
-    varargout(1) = {result}; 
-end
+%%  output parameters
+
+% Write Data
+varargout(1) = {result};
 
 %end function
 end

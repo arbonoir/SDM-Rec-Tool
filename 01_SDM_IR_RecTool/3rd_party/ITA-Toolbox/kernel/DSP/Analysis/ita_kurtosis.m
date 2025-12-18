@@ -27,7 +27,7 @@ function result = ita_kurtosis(varargin)
 
 
 %% Initialization and Input Parsing
-error(nargchk(1,2,nargin,'string'));
+narginchk(1,2);
 blockLength = [];
 if nargin == 2
     blockLength = varargin{2};

@@ -28,12 +28,9 @@ function varargout = ita_plot_time_dB(varargin)
 % Autor: Pascal Dietrich -- Email: pdi@akustik.rwth-aachen.de
 % Created:  01-May-2005
 
-%% Get Function String
-thisFuncStr  = [upper(mfilename) ':'];     %#ok<NASGU> %Use to show warnings or infos in this functions
 
 %% Get Defaults
 matlabdefaults = ita_set_plot_preferences; %set ita toolbox preferences and get the matlab default settings
-
 [fgh,axh] = ita_plot_time(varargin{:},'nodb',false);
 
 

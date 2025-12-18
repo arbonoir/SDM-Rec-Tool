@@ -60,7 +60,6 @@ matlabdefaults = ita_set_plot_preferences; %#ok<NASGU> %set ita toolbox preferen
 sArgs = struct('pos1_data','itaSuper','nodb',true,'unwrap',false,'wrapTo360',false,'figure_handle',[],'axes_handle',[],'linfreq','off','linewidth',ita_preferences('linewidth'),...
     'fontname',ita_preferences('fontname'), 'xlim',[],'ylim',[],'axis',[],'aspectratio',[],'hold','off','precise',true,'ylog',false,'plotargs',[]);
 [data, sArgs] = ita_parse_arguments(sArgs, varargin); 
-
 if numel(data) > 1
     ita_verbose_info([thisFuncStr 'There is more than one instance stored in that object. Plotting the first one only.'],0);
     varargin{1} = data(1); 
@@ -117,10 +116,10 @@ linkaxes([axh1 axh2],'x');
 
 setappdata(fgh,'AxisHandles',[axh1 axh2]);
 setappdata(fgh,'ActiveAxis',axh1);
-
+setappdata(fgh,'ita_domain', 'frequency and phase');
 %% Make first axis current
-axes(axh1);
-
+%axes(axh1); hbr - produce error on 2016b
+set(fgh,'CurrentAxes',axh1)
 %% Return the figure handle
 if nargout
     varargout{1} = fgh;

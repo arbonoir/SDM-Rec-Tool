@@ -29,7 +29,7 @@ function result = ita_read_blockwise(varargin)
 verboseMode  = ita_preferences('verboseMode');  %#ok<NASGU> Use to show additional information for the user
 thisFuncStr  = [upper(mfilename) ':'];     % Use to show warnings or infos in this functions
 
-error(nargchk(4,4,nargin,'string'));
+narginchk(4,4);
 
 filename = varargin{1};
 nBlock = varargin{2};

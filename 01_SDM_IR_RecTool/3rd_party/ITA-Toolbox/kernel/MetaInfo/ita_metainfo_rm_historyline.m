@@ -22,7 +22,7 @@ function varargout = ita_metainfo_rm_historyline(varargin)
 
 %% Initialization
 % Number of Input Arguments
-error(nargchk(1,2,nargin,'string'));
+narginchk(1,2);
 % Find Audio Data
 
 h = varargin{1};

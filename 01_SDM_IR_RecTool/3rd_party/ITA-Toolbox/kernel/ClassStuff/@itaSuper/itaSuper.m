@@ -142,7 +142,7 @@ classdef itaSuper < itaMeta
                             fieldName = fieldnames(varargin{1});
                         end
                     end
-                    for ind = 1:numel(fieldName);
+                    for ind = 1:numel(fieldName)
                         try
                             this.(fieldName{ind}) = varargin{1}.(fieldName{ind});
                         catch errmsg
@@ -156,6 +156,12 @@ classdef itaSuper < itaMeta
                     this(idx).mData = deal(nan(varargin{2})); %#ok<AGROW>
                 end
             end
+            
+            %% Add history line
+            commitID = ita_git_commit_id();
+            if ~(isempty(commitID) || strcmp(commitID,'0'))
+                this = ita_metainfo_add_historyline(this,'GitVersion',commitID);
+            end
         end
         
         
@@ -166,8 +172,7 @@ classdef itaSuper < itaMeta
         end
         function this = set.time(this,value)
             dimensionsValue = size(value);
-            nSamples = dimensionsValue(1);
-            this.timeData = reshape(value, nSamples, []);
+            this.timeData = reshape(value, dimensionsValue(1), []);
             this.dimensions = dimensionsValue(2:end);
         end
         function result = get.freq(this)
@@ -176,8 +181,7 @@ classdef itaSuper < itaMeta
         end
         function this = set.freq(this,value)
             dimensionsValue = size(value);
-            nBins = dimensionsValue(1);
-            this.freqData = reshape(value, nBins, []);
+            this.freqData = reshape(value, dimensionsValue(1), []);
             this.dimensions = dimensionsValue(2:end);
         end
         
@@ -249,8 +253,19 @@ classdef itaSuper < itaMeta
         end
         
         %% Channel Stuff
-        
-        
+        function this = channelDelete(this, idxChDelete)
+            % Example: oAudio = oAudio.channelDelete(1); %object has to be
+            % set to itself again, since itaSuper is no handle class.
+            validateattributes(idxChDelete,{'numeric'},{'vector','nonempty','integer'})
+            if numel(this) > 1 
+                ita_verbose_info('This does not work for multiinstance itaAudio objects.',0);
+                return;
+            end
+            idxChToKeep              = 1:this.nChannels;
+            idxChToKeep(idxChDelete) = [];
+            this                     = this.ch(idxChToKeep);
+        end
+            
         function result = get.channelNames(this)
             result = this.mChannelNames;
             if numel(result) ~= this.nChannels
@@ -456,7 +471,7 @@ classdef itaSuper < itaMeta
             else
                 this.mDataTypeEqual = false;
             end
-            if strmatch('int',value)
+            if strncmp('int', value, 3)
                 ita_verbose_info('Sorry, but ''int'' is really dangerous for dataTypeOutput, please use double or single.',1)
             end
         end
@@ -488,13 +503,14 @@ classdef itaSuper < itaMeta
             % get the number of channels
             %dims = size(this.data);
             %result = prod(dims(2:end));
-            result = prod(this.dimensions(1:end));
+            result = prod(this.dimensions(:));
         end
+
         function res = get_diag(this)
-            for idx = 1:size(this,1)
-                res(idx) = this(idx,idx);
-            end
+			% use eye as mask for diagonal
+			res = this(logical(eye(size(this,1))));
         end
+
         function this = diag(this,diagonalshift,blocksize)
             %diagonal of matrix, or build diagonal matrix out of vector
             if nargin == 1 || isempty(diagonalshift)
@@ -587,12 +603,12 @@ classdef itaSuper < itaMeta
             
             % and select the appropriate Channel struct(s)
             %% merge channelInfo
-            channelFields = this.fields;
-            channelFields = channelFields(strmatch('channel',channelFields));
+            channelFields = properties(this);
+            channelFields = channelFields(strncmp('channel',channelFields,7));
             
             for idchfield = 1:numel(channelFields)
                 thisFieldName = channelFields{idchfield};
-                if any(strmatch('split',methods(this.(thisFieldName)),'exact')) % Check if it has a split-function
+                if any(strcmp('split',methods(this.(thisFieldName)))) % Check if it has a split-function
                     result.(thisFieldName) = split(this.(thisFieldName),index);
                 else % just use cat
                     result.(thisFieldName) = this.(thisFieldName)(index);
@@ -609,6 +625,10 @@ classdef itaSuper < itaMeta
                 
                 % Array
             elseif nargin == 1 && numel(this) > 1
+                if any(isempty(this(:))) % any empty objects
+                    ita_verbose_info(sprintf('Merge: Skipping %i empty objects.',sum(isempty(this(:)) )),1)
+                    this = this(~isempty(this(:)));
+                end
                 this2 = this(2:end);
                 this = this(1);
                 for idx = 1:numel(this2)
@@ -647,12 +667,12 @@ classdef itaSuper < itaMeta
                     this.data = [this.data  this2.data];
                     
                     %% merge channelInfo
-                    channelFields = this.fields;
-                    channelFields = channelFields(strmatch('channel',channelFields));
+                    channelFields = properties(this);
+                    channelFields = channelFields(strncmp('channel',channelFields,7));
                     
                     for idchfield = 1:numel(channelFields)
                         thisFieldName = channelFields{idchfield};
-                        if any(strmatch('merge',methods(this.(thisFieldName)),'exact')) % Check if it has a merge-function
+                        if any(strcmp('merge',methods(this.(thisFieldName)))) % Check if it has a merge-function
                             this.(thisFieldName) = merge(split(this.(thisFieldName),(1:thischannels)),  this2.(thisFieldName));
                         else % just use cat
                             this.(thisFieldName) = [this.(thisFieldName)(1:thischannels);  this2.(thisFieldName)(:)];
@@ -672,12 +692,21 @@ classdef itaSuper < itaMeta
             % Prepare two object for merge, check if compatible and try to fix problems
             
             %% Check
+            
             if ~strcmpi(this1.domain,this2.domain)
-                error('%s: Domains are not the same, I don''t know what to do',upper(mfilename))
+                error('Merge: These objects won''t work together: ill-suited domain')
             end
-            if this1.nSamples ~= this2.nSamples || ~strcmp(class(this1),class(this2)) || numel(this1.dimensions) ~= numel(this2.dimensions)
-                error('%s:Merge: Sorry, these ITAs wont work together',upper(mfilename));
+            if this1.nSamples ~= this2.nSamples 
+                error('Merge: These objects won''t work together: ill-suited number of samples');
             end
+            if ~strcmp(class(this1),class(this2)) 
+                error('Merge: These objects won''t work together: ill-suited class');
+            end
+            if  numel(this1.dimensions) ~= numel(this2.dimensions)
+                error('Merge: These objects won''t work together: ill-suited dimensions');
+            end
+
+            
         end
         
         function result = ch(this, channels)
@@ -734,7 +763,7 @@ classdef itaSuper < itaMeta
             [sArgs] = ita_parse_arguments(struct('log_prefix',[]),varargin);
             
             %get logarithmic frequency data 20*log10(abs(Obj.freq)/referenceValue)
-            [x,  refValues, log_prefix] = itaValue.log_reference(this.channelUnits);
+            [~,  refValues, log_prefix] = itaValue.log_reference(this.channelUnits);
             if sArgs.log_prefix
                 log_prefix = sArgs.log_prefix;
             end
@@ -748,7 +777,7 @@ classdef itaSuper < itaMeta
             [sArgs] = ita_parse_arguments(struct('log_prefix',[]),varargin);
             
             %get logarithmic frequency data 20*log10(abs(Obj.freq)/referenceValue)
-            [x,  refValues, log_prefix] = itaValue.log_reference(this.channelUnits);
+            [~,  refValues, log_prefix] = itaValue.log_reference(this.channelUnits);
             if sArgs.log_prefix
                 log_prefix = sArgs.log_prefix;
             end
@@ -832,33 +861,34 @@ classdef itaSuper < itaMeta
     methods(Hidden = true)
         function res = legend(this,varargin)
             % build a cell of strings for the plot legend
-            if nargin == 1;
+            if nargin == 1
                 mode = 'log';
             else
                 mode = varargin{1};
             end
-            channelNames = this.channelNames;
-            channelUnits = this.channelUnits;
-            channelUnits(strcmpi(channelUnits,'')) = {'1'};
-            res = {};
+            tmp_channelNames = this.channelNames;
+            tmp_channelUnits = this.channelUnits;
+            tmp_channelUnits(strcmpi(tmp_channelUnits,'')) = {'1'};
+			res = cell(1,this.nChannels);
             for idx = 1:this.nChannels
                 if strcmpi(mode,'nodb')
-                    res{idx} = [channelNames{idx} ' [' channelUnits{idx} ']' ];
+                    res{idx} = [tmp_channelNames{idx} ' [' tmp_channelUnits{idx} ']' ];
                 elseif strcmpi(mode,'nothing')
-                    res{idx} = [channelNames{idx}];
+                    res{idx} = [tmp_channelNames{idx}];
                 else
-                    res{idx} = [channelNames{idx} ' [dB re ' itaValue.log_reference( channelUnits{idx}) ']' ];
+                    res{idx} = [tmp_channelNames{idx} ' [dB re ' itaValue.log_reference( tmp_channelUnits{idx}) ']' ];
                 end
             end
         end
         
-        function res = log_reference(this)
-            
-        end
+		% TODO What is this supposed to do?
+        % function res = log_reference(this)
+        %     
+        % end
         
         function result = get_data(this)
             if ~this.mDataTypeEqual || any(this.mDataFactor ~= 1)
-                if strmatch('int',this.dataTypeOutput)
+                if strncmp('int', this.dataTypeOutput, 3)
                     result = cast(this.mData,this.dataTypeOutput);
                 else
                     result = cast(this.mData,this.dataTypeOutput)  .* this.mDataFactor;
@@ -871,7 +901,7 @@ classdef itaSuper < itaMeta
             % this functions is needed for class itaAudioDevNull
             % and for the check of even number of samples
             if ~isa(value, this.dataType)
-                if any(strmatch('int',this.dataType)) && ~any(strmatch('int',this.dataTypeOutput))
+                if any(strncmp('int', this.dataType, 3)) && ~any(strcmp('int', this.dataTypeOutput, 3))
                     this.dataFactor = double(max(max(abs(value)))) ./ (double(intmax(this.dataType))-1);
                     value = value ./ this.mDataFactor;
                 end
@@ -987,9 +1017,7 @@ classdef itaSuper < itaMeta
         function displayLineEnd(this)
             disp(this.LINE_END);
         end
-        function displayEndOfClass(this, classname,firstStr)
-            if exist('firstStr','var')
-            end
+        function displayEndOfClass(this, classname)
             classnameString = ['(' classname ')'];
             result = repmat(' ', 1, length(this.LINE_START) - length(classnameString));
             disp([result classnameString]);
@@ -1000,7 +1028,7 @@ classdef itaSuper < itaMeta
             if nargin == 1 % only get
                 for idx = 1:size(this,1)
                     for jdx = 1:size(this,2)
-                        for ndx = 1:this(idx,jdx).nChannels;
+                        for ndx = 1:this(idx,jdx).nChannels
                             result(idx,jdx,ndx) = itaValue(1,this(idx,jdx).channelUnits{ndx});
                         end
                     end
@@ -1008,7 +1036,7 @@ classdef itaSuper < itaMeta
             else % set values
                 for idx = 1:size(this,1)
                     for jdx = 1:size(this,2)
-                        for ndx = 1:this(idx,jdx).nChannels;
+                        for ndx = 1:this(idx,jdx).nChannels
                             this(idx,jdx,ndx).channelUnits{ndx} = value(idx,jdx);
                         end
                     end
@@ -1043,10 +1071,10 @@ classdef itaSuper < itaMeta
         function dimString = dimString(this)
             % get a nice dimension string
             dimString = [];
-            dimensions = this.dimensions;
-            for ind = 1:numel(dimensions)
-                dimString = [dimString num2str(dimensions(ind))]; %#ok<AGROW>
-                if ind < numel(dimensions)
+            tmp_dimensions = this.dimensions;
+            for ind = 1:numel(tmp_dimensions)
+                dimString = [dimString num2str(tmp_dimensions(ind))]; %#ok<AGROW>
+                if ind < numel(tmp_dimensions)
                     dimString = [dimString ' x ']; %#ok<AGROW>
                 end
             end

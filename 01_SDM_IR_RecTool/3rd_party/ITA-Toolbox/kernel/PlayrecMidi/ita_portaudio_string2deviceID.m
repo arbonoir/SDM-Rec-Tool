@@ -19,9 +19,9 @@ function varargout = ita_portaudio_string2deviceID(varargin)
 % Created:  22-Apr-2009
 
 %% Initialization and Input Parsing
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 sArgs        = struct('pos1_string','char');
-[string,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[string,sArgs] = ita_parse_arguments(sArgs,varargin); 
 
 hPlayRec = ita_playrec; %work with handle instead of directly calling playrec
 

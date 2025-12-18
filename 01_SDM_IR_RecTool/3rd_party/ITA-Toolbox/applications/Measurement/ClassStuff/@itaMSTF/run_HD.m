@@ -1,9 +1,12 @@
-function [result max_rec_lvl] = run_HD(this, varargin)
+function [result, max_rec_lvl, shiftSamples] = run_HD(this, varargin)
 % run_HD - Run harmonic distortion measurement.
 %
 % This function runs a measurement with input measurement chain
 % correction and deconvolution, and splits the result into
 % seperate channels for every harmonic.
+%
+% The propagation delay in the impulse response is automatically removed
+% and the resulting shift samples are returned as a third output argument
 
 % <ITA-Toolbox>
 % This file is part of the application Measurement for the ITA-Toolbox. All rights reserved.
@@ -21,8 +24,8 @@ else
     MS = this;
 end
 
-[result max_rec_lvl] = run_raw_imc_dec(MS);
+[result, max_rec_lvl] = run_raw_imc_dec(MS);
 
-result = ita_nonlinearities_find_harmonics(result, MS.final_excitation,'windowFactor', sArgs.windowFactor, 'degree', sArgs.degree);
+[result,shiftSamples] = ita_nonlinear_extract_harmonics(result, MS.final_excitation,'windowFactor', sArgs.windowFactor, 'degree', sArgs.degree);
 
 end

@@ -25,7 +25,7 @@ function varargout = ita_parse_arguments_gui(varargin)
 % Created:  20-Jun-2009 
 
 %% Initialization and Input Parsing
-%error(nargchk(1,1,nargin,'string'));
+%narginchk(1,1);
 sArgs        = struct('pos1_input','struct','title','Automatically generated gui');
 [input,sArgs] = ita_parse_arguments(sArgs,varargin); 
 
@@ -46,11 +46,7 @@ end
 for idx = 1:numel(fieldclass)
     switch fieldclass{idx}
         case {'itaAudio','itaAudioTime','itaAudioFreq'}
-            if idx == 1
-                fieldclass{idx} = 'itaAudioInUse';
-            else
-                fieldclass{idx} = 'itaAudio';
-            end
+            fieldclass{idx} = 'itaAudio';
         case {'logical'}
             fieldclass{idx} = 'bool';
         case {'char'}
@@ -58,7 +54,7 @@ for idx = 1:numel(fieldclass)
                 fieldclass{idx} = 'itaAudioResult';
             end
     end
-        
+    
 end
 
 %% Build pList

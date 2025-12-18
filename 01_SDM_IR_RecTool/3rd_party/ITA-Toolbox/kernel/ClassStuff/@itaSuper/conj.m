@@ -6,7 +6,7 @@ function varargout = conj(varargin)
 % You can find the license for this m-file in the license.txt file in the ITA-Toolbox folder. 
 % </ITA-Toolbox>
 
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 data = varargin{1};
 %% Conjugate Complex
 for idx = 1:numel(data)

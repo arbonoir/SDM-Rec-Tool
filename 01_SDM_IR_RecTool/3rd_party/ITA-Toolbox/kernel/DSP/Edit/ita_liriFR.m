@@ -42,7 +42,7 @@ function varargout = ita_liriFR(varargin)
 
 %% Initialization
 % Number of Input Arguments
-error(nargchk(3,5,nargin,'string'));
+narginchk(3,5);
 
 [audio2BFiltered, originalDomain, nSamples, SamplingRate, cutOffFreq, passType, order]=parseinput(varargin);
 

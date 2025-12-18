@@ -16,7 +16,7 @@ function varargout = ita_struve1(varargin)
 
 
 %% Initialisation
-error(nargchk(1,1,nargin));
+narginchk(1,1);
 inVector = varargin{1};
 %% Calculation
 J_0 = besselj(0,inVector);

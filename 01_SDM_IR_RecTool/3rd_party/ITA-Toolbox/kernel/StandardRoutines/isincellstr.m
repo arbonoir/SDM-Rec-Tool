@@ -27,7 +27,7 @@ function varargout = isincellstr( varargin )
 
 
 % Argument checking, parsing and conversion
-error(nargchk(2,10,nargin,'string'));
+narginchk(2,10);
 verboseMode  = ita_preferences('verboseMode');
 
 sArgs = struct('any',false,'substring',false,'casesensitive',false,'allow_wrong_type',true);

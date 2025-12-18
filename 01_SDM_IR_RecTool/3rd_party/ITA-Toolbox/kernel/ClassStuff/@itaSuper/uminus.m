@@ -7,7 +7,7 @@ function varargout = uminus(varargin)
 % </ITA-Toolbox>
 
 
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 a = varargin{1};
 %% Negate
 for idx = 1:numel(a)

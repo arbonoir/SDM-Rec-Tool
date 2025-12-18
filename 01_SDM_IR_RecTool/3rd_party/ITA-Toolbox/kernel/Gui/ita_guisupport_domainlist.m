@@ -26,17 +26,17 @@ result = {struct('name','','accelerator','','separator','')}; %Init result. Will
 if isa(type,'itaAudio') || (isa(type,'itaResult') && strcmpi(type.domain,'freq'))
     
     ele = ele + 1;
-    result{ele}.name = 'Magnitude';
+    result{ele}.name = 'Frequency';
     result{ele}.accelerator = 'M';
     result{ele}.separator = false;
     
     ele = ele + 1;
-    result{ele}.name = 'Magnitude and Phase';
+    result{ele}.name = 'Frequency and Phase';
     result{ele}.accelerator = 'P';
     result{ele}.separator = false;
     
     ele = ele + 1;
-    result{ele}.name = 'Magnitude and Group Delay';
+    result{ele}.name = 'Frequency and Group Delay';
     result{ele}.accelerator = 'G';
     result{ele}.separator = false;
     

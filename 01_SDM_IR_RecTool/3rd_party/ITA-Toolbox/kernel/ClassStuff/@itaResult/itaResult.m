@@ -113,9 +113,9 @@ classdef itaResult < itaSuper
                     this.abscissa = abscissaInput(:);
                     switch audioInput.domain
                         case 'time'
-                            this.timeData = audioInput.time2value(abscissaInput(:));
+                            this.time = audioInput.time2value(abscissaInput(:));
                         case 'freq'
-                            this.freqData = audioInput.freq2value(abscissaInput(:));
+                            this.freq = audioInput.freq2value(abscissaInput(:));
                     end
                 else
                     this.abscissa = abscissaInput(:);
@@ -214,10 +214,14 @@ classdef itaResult < itaSuper
         function [this1, this2] = prepare4merge(this1, this2)
             % Prepare two object for merge, check if compatible and try to fix problems
             
-            if ~strcmpi(this1.domain,this2.domain) || numel(this1.abscissa) ~= numel(this2.abscissa) || any(round(this1.abscissa(:).*1e6) ~= round(this2.abscissa(:).*1e6)) % also check for resultType? || ~strcmp(this.resultType,this2.resultType)
-                error('%s:Merge: Sorry, these ITAs wont work together',upper(mfilename));
+            if ~strcmpi(this1.domain,this2.domain) 
+                error('Merge: These itaResults wont work together: ill-suited  domain');
             end
             
+            if  numel(this1.abscissa) ~= numel(this2.abscissa) || any(round(this1.abscissa(:).*1e6) ~= round(this2.abscissa(:).*1e6)) % also check for resultType? || ~strcmp(this.resultType,this2.resultType)
+                error('Merge: These itaResults wont work together: ill-suited abscissa ');
+            end
+
             [this1, this2] = prepare4merge@itaSuper(this1, this2);
         end
         
@@ -294,7 +298,7 @@ classdef itaResult < itaSuper
         
         function revision = classrevision
             % Return last revision on which the class definition has been changed (will be set automatic by svn)
-            rev_str = '$Revision: 11161 $'; % Please dont change this, will be set by svn
+            rev_str = '$Revision: 12902 $'; % Please dont change this, will be set by svn
             revision = str2double(rev_str(isstrprop(rev_str,'digit')));
         end
         

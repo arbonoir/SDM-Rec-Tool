@@ -26,7 +26,7 @@ function ita_metainfo_show_history(varargin)
 
 %% Initialization
 % Number of Input Arguments
-error(nargchk(1,2,nargin,'string'));
+narginchk(1,2);
 sub_call = false; %used to determine subcalls
 % Find Audio Data
 if isa(varargin{1},'itaSuper')

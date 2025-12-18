@@ -6,7 +6,7 @@ function varargout = min(varargin)
 % You can find the license for this m-file in the license.txt file in the ITA-Toolbox folder. 
 % </ITA-Toolbox>
 
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 result = varargin{1};
 if numel(result)>1 %get min over multiple instances and not over channel of each struct
     tmp = result(1);

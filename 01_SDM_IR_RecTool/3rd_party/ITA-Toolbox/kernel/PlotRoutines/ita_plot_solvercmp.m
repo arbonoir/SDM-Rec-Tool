@@ -37,9 +37,9 @@ function ita_plot_solvercmp(varargin)
 thisFuncStr  = [upper(mfilename) ':'];     % Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-error(nargchk(3,3,nargin,'string'));
+narginchk(3,3);
 sArgs        = struct('pos1_import','itaAudio','pos2_compare','itaAudio','pos3_mode','string');
-[import,compare,mode,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[import,compare,mode,sArgs] = ita_parse_arguments(sArgs,varargin); 
 
 %% Get paramters
 

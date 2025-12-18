@@ -18,6 +18,7 @@ function varargout = ita_main_window(varargin)
 % Created:  19-Jun-2009
 
 %% Check for Toolboxsetup
+
 ita_check4toolboxsetup();
 
 %% Get ITA Toolbox preferences and Function String
@@ -33,6 +34,7 @@ sArgs = ita_parse_arguments(sArgs,varargin);
 
 %% 
 if ~isempty(sArgs.handle) && all(ishandle(sArgs.handle)) %Its a valid figure handle
+    error('keiner weiﬂ wozu man die funktion noch braucht')
         fgh = sArgs.handle;
         while ~strcmpi(get(fgh,'Type'),'figure') && ~isempty(get(fgh,'Parent'))
             fgh = get(fgh,'Parent');
@@ -51,6 +53,7 @@ elseif strcmpi(sArgs.handle,'new') %Create a new one
     ita_plottools_maximize();
     ita_plottools_ita_logo('centered');
 else
+    error('keine weiﬂ wozu man die funktion noch braucht')
     fgh = [];
 end
 

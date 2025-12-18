@@ -20,9 +20,9 @@ function varargout = ita_imag(varargin)
 
 
 %% Initialization and Input Parsing
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 sArgs        = struct('pos1_data','itaSuper');
-[result,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[result,sArgs] = ita_parse_arguments(sArgs,varargin); 
 
 %% Imag
 result.freqData = imag(result.freqData);

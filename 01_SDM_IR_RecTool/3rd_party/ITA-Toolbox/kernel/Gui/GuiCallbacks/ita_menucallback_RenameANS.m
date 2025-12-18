@@ -9,7 +9,7 @@ function ita_menucallback_RenameANS(hObject, event)
 ele = 1;
 pList{ele}.description = 'Current itaAudio (ANS)';
 pList{ele}.helptext    = 'Rename this itaAudio';
-pList{ele}.datatype    = 'itaAudioInUse';
+pList{ele}.datatype    = 'itaAudio';
 pList{ele}.default     = '';
 
 ele = 2;

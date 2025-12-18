@@ -103,10 +103,7 @@ else
     set(axh,'YLim',sort([abs_min abs_max]));
 end
 
-%% Sets both x and y axis limits
-if ~isempty(options.axis)
-    axis(axh,options.axis);
-end
+
 
 %% background color
 if ita_preferences('blackbackground')~=0 %%saves time
@@ -218,6 +215,11 @@ if ~isempty(data.plotAxesProperties)
     end;
 end
 
+%% Sets both x and y axis limits
+if ~isempty(options.axis)
+    axis(axh,options.axis);
+end
+
 %% Legend or no Legend, that's the ... pdi: moved after setting the data
 if (~isempty(data.plotLineProperties) ||   legendflat) && ~strcmp(options.plotType,'spectrogram')    %Types: time, mag, phase, gdelay
     %pdi: speed reason: no legend required, no time spent on setting the channeldata...
@@ -260,6 +262,9 @@ if strcmp(options.xUnit,'Hz')
     setappdata(fgh,'XTickVecLog',XTickVec_log);
 end
 
+%jri save ita audio in figure to fix the gui-ans-bug
+setappdata(fgh,'audioObj',data);
+
 %% Save information in the axes userdata section
 limits = [xlim ylim];
 setappdata(axh,'AllChannels',1);   %used for all channel /single channel switch
@@ -289,19 +294,6 @@ end
 
 %% Menu
 if ita_preferences('itamenu')
-    % set this window ita_main_window
-    ita_main_window('handle',fgh,'type',data);
-    
-    %% ToDo: Only in debug-mode, but how?
-    if numel(dbstatus) > 0 % Does not check for debug mode but for breakpoints and 'stop if error' so its a start
-        ita_setinbase('last_ans',data);
-    end
-    
-    % set right variable name ein ita_inuse
-    if isempty(getappdata(fgh,'VarInUse'))
-        ita_inuse(fgh,data);
-    end
-    % Add menu
     ita_menu('handle',fgh,'type',data);
 end
 

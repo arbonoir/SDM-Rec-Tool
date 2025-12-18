@@ -21,12 +21,12 @@ function varargout = ita_plottools_ticks(varargin)
 
 %% Get ITA Toolbox preferences and Function String
 verboseMode  = ita_preferences('verboseMode');  %#ok<NASGU> Use to show additional information for the user
-thisFuncStr  = [upper(mfilename) ':'];     %#ok<NASGU> Use to show warnings or infos in this functions
+thisFuncStr  = [upper(mfilename) ':'];
 
 %% Initialization and Input Parsing
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 sArgs        = struct('pos1_mode','char');
-[mode_str,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[mode_str,sArgs] = ita_parse_arguments(sArgs,varargin);
 
 %% What mode is requested?
 switch(lower(mode_str))
@@ -43,13 +43,12 @@ switch(lower(mode_str))
         xlabel_vec  = {''   '2k'   '' '4k' ''   '6k' ''   '8k' ''  '10k'  ''   '12k'  ''   '14k'  ''    '16k' ''    '18k' ''   '20k'  ''   '22k'};
         xtick_vec   = [1000 2000 3000 4000 5000 6000 7000 8000 9000 10000 11000 12000 13000 14000 15000 16000 17000 18000 19000 20000 21000 22000];
         
-        
     case {'ansi'}
-        freq            = ita_ansi_center_frequencies;
+        freq            = ita_ANSI_center_frequencies;
         idxForKilo      = freq >= 1000;
         
         freqFormated    = freq;
-        freqFormated(idxForKilo)    =  freqFormated(idxForKilo)   / 1000;
+        freqFormated(idxForKilo) = freqFormated(idxForKilo) / 1000;
               
         ansiLabel   = num2str(freqFormated', '%1.1f');
         
@@ -58,18 +57,16 @@ switch(lower(mode_str))
             tmp =  ansiLabel(iLine,:);
             tmp = strrep(tmp, '.0', '');
             if idxForKilo(iLine)
-                tmp = [ tmp ' k'];
+                tmp = [ tmp 'k'];
             end
             labelCell{iLine} = tmp;
         end
         
         xlabel_vec  = labelCell;
-        xtick_vec   = freq;
-        
-        
+        xtick_vec   = freq;        
         
     otherwise
-        error([thisFunStr 'What mode should this be?'])
+        error([thisFuncStr 'What mode should this be?'])
 end
 
 %% Find output parameters

@@ -23,7 +23,7 @@ function varargout = ita_readunv58(varargin)
 
 %% Initialization
 % Number of Input Arguments
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 unvFilename = varargin{1};
 
 %% 'result' is an audioObj and is given back
@@ -49,7 +49,12 @@ channelUnits = cell(1,nDataSet);
 nodes = zeros(nDataSet,1);
 switch ds.abscissaUnitsLabel
     case 's' % data from B&K Pulse or other measurement systems
-        SamplingRate = round(1./DataSet{1}.dx);
+        if ~isempty(ds.dx)
+            SamplingRate = 1./ds.dx;
+        else
+            SamplingRate = median(1./diff(unique(abscissa)));
+        end
+        SamplingRate = round(SamplingRate,-1);
         for i=1:nDataSet %Read the data into the variables
             y = DataSet{i}.measData(:);
             if ~isempty(y)
@@ -64,12 +69,12 @@ switch ds.abscissaUnitsLabel
                 channelUnits(i) = {''};
             end
         end
-        if numel(unique(nodes)) == 1
-            resultArray = resultArray(:);
-            channelNames = channelNames(1);
-            channelUnits = channelUnits(1);
-            nodes = nodes(1);
-        end
+%         if numel(unique(nodes)) == 1
+%             resultArray = resultArray(:);
+%             channelNames = channelNames(1);
+%             channelUnits = channelUnits(1);
+%             nodes = nodes(1);
+%         end
         result = itaAudio(resultArray,SamplingRate,'time');
         result.channelNames = channelNames;
         result.channelUnits = channelUnits;

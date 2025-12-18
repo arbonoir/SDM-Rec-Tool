@@ -5,6 +5,13 @@ function ita_menucallback_ChannelSettings(hObject, event)
 % You can find the license for this m-file in the license.txt file in the ITA-Toolbox folder. 
 % </ITA-Toolbox>
 
-ita_setinbase('ANS', ita_channel_settings(ita_getfrombase));
-ita_getfrombase;
+
+fgh        = ita_guisupport_getParentFigure(hObject);
+audioObj = getappdata(fgh, 'audioObj');
+
+result = ita_channel_settings(audioObj);
+
+setappdata(fgh, 'audioObj', result);
+ita_guisupport_updateGUI(fgh);
+
 end

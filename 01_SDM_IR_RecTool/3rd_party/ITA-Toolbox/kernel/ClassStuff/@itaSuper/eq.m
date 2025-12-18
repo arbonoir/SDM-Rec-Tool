@@ -6,7 +6,7 @@ function varargout = eq(varargin)
 % You can find the license for this m-file in the license.txt file in the ITA-Toolbox folder. 
 % </ITA-Toolbox>
 
-error(nargchk(2,2,nargin,'string'));
+narginchk(2,2);
 ao1 = varargin{1};
 ao2 = varargin{2};
 if all(size(ao1.data) == size(ao2.data))

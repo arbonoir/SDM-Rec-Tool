@@ -49,7 +49,7 @@ function result = ita_ifft(varargin)
 
 
 %% Initialization
-error(nargchk(1,2,nargin));
+narginchk(1,2);
 
 if isa(varargin{1},'itaAudio')
     audioObj = varargin{1};

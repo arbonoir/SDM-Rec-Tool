@@ -9,7 +9,7 @@ function varargout = plus(varargin)
 
 %$DONTCOMPILE$
 
-error(nargchk(2,3,nargin,'string'));
+narginchk(2,3);
 if ~isa(varargin{1},'itaSuper')
     a = varargin{2};
     b = varargin{1};

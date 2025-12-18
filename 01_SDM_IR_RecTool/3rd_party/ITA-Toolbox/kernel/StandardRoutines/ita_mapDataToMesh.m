@@ -24,7 +24,7 @@ thisFuncStr  = [upper(mfilename) ':'];     % Use to show warnings or infos in th
 
 %% Initialization and Input Parsing
 sArgs        = struct('pos1_dataStruct','itaSuper','pos2_meshStruct','itaCoordinates');
-[dataStruct,meshStruct,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[dataStruct,meshStruct,sArgs] = ita_parse_arguments(sArgs,varargin);  %#ok<ASGLU>
 
 if ~isa(meshStruct,'itaMeshNodes')
    meshStruct = itaMeshNodes(meshStruct.cart,'cart'); 

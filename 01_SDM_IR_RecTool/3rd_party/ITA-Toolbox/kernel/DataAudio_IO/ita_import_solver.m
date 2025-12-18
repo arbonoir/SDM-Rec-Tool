@@ -29,7 +29,7 @@ function varargout = ita_import_solver(varargin)
 thisFuncStr  = [upper(mfilename) ':'];     % Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-error(nargchk(3,4,nargin,'string'));
+narginchk(3,4);
 sArgs        = struct('pos1_samplingrate','integer','pos2_unit','string','pos3_identifier','string');
 
 [samplingrate,unit,identifier,sArgs] = ita_parse_arguments(sArgs,varargin(1:3)); %#ok<NASGU>

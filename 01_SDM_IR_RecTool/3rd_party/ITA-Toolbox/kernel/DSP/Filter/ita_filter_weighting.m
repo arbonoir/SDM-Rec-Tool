@@ -44,13 +44,13 @@ C1000 = -0.062; % dB
 
 switch lower(sArgs.type)
     case 'a'
-        weightFunc = @(f) 20.*log10(f4^2 .* f.^4./((f.^2 + f1.^2).*sqrt(f.^2 + f2.^2).*sqrt(f.^2 + f3.^2).*(f.^2 + f4.^2)))-A1000;
+        weightFunc = @(f) (f4^2 .* f.^4./((f.^2 + f1.^2).*sqrt(f.^2 + f2.^2).*sqrt(f.^2 + f3.^2).*(f.^2 + f4.^2))).*10^(-A1000/20);
     case 'c'
-        weightFunc = @(f) 20.*log10(f4^2 .* f.^2./((f.^2 + f1.^2).*(f.^2 + f4.^2)))-C1000;
+        weightFunc = @(f) (f4^2 .* f.^2./((f.^2 + f1.^2).*(f.^2 + f4.^2))).*10^(-C1000/20);
     otherwise
         error(['Wrong weighting type:' sArgs.type]);
 end
-input.freq = bsxfun(@times,input.freq,10.^(weightFunc(input.freqVector)./10));
+input.freq = bsxfun(@times,input.freq,weightFunc(input.freqVector));
 
 %% Add history line
 input = ita_metainfo_add_historyline(input,mfilename,varargin);

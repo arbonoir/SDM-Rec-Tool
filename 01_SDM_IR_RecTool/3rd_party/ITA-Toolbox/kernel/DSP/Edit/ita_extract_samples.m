@@ -30,7 +30,7 @@ function varargout = ita_extract_samples(data, ind, WindowType)
 %thisFuncStr  = [upper(mfilename) ':'];     %#ok<NASGU> Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-error(nargchk(2,3,nargin,'string'));
+narginchk(2,3);
 
 persistent ita_extract_window;
 persistent ita_extract_window_type;

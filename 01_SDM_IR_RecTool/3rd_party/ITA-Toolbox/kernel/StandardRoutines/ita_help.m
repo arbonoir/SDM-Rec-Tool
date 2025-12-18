@@ -11,11 +11,12 @@ function ita_help(varargin)
 % Created:  19-Jun-2009 
 
 %% Get ITA Toolbox preferences and Function String
-helppath = [ita_toolbox_path filesep 'HTML' filesep 'doc'];
+helppath = fullfile(ita_toolbox_path, 'HTML', 'doc');
 if ~exist(helppath,'dir')
-    helpdlg('Oh Lord, I got no help, I need someone to write it!');
+    ita_verbose_info('No help found. Please run ita_generate_documentation to generate it.',0);
 else
-    web index.html -helpbrowser
+    web(fullfile(helppath, 'index.html'),'-helpbrowser')
 end
+
 
 end

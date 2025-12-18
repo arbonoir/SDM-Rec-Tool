@@ -30,7 +30,7 @@ if isempty(extensionMap)
 end
 
 %% Input check
-% error(nargchk(0,3,nargin));
+% narginchk(0,3);
 if nargin == 0
     ita_write_gui();
     return;

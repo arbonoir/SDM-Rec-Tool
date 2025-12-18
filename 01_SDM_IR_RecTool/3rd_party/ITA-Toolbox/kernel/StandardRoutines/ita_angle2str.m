@@ -22,7 +22,7 @@ function varargout = ita_angle2str(varargin)
 
 %% Initialization
 % Number of Input Arguments
-error(nargchk(1,2,nargin,'string'));
+narginchk(1,2);
 
 % number of digits
 if nargin == 1

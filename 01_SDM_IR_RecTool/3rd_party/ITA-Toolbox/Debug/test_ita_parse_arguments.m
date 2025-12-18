@@ -31,3 +31,15 @@ end
 % - 
 
 
+%% test moving unknown options to second output
+testStruct.testpar = 1;
+testStruct.testpar2 = 2;
+
+parCell = {'testpar', 2, 'testpar2', 4,'unknown', 6};
+
+% this should give a warning
+[sArgs] = ita_parse_arguments(testStruct,parCell); 
+
+% this should not
+[sArgs,unknownParams] = ita_parse_arguments(testStruct,parCell); 
+

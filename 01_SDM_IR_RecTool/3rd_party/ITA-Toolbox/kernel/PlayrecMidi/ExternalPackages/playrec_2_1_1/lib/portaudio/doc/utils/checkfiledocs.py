@@ -1,6 +1,7 @@
+from __future__ import print_function
+
 import os
 import os.path
-import string
 
 paRootDirectory = '../../'
 paHtmlDocDirectory = os.path.join( paRootDirectory, "doc", "html" )
@@ -18,14 +19,23 @@ paHtmlDocDirectory = os.path.join( paRootDirectory, "doc", "html" )
 ## This can be used as a first-level check to make sure the documentation is in order.
 ##
 ## The idea is to get a list of which files are missing doxygen documentation.
+##
+## How to run:
+##  $ cd doc/utils
+##  $ python checkfiledocs.py
 
+def oneOf_a_in_b(a, b):
+    for x in a:
+        if x in b:
+            return True
+    return False
 
 # recurse from top and return a list of all with the given
 # extensions. ignore .svn directories. return absolute paths
-def recursiveFindFiles( top, extensions, includePaths ):
+def recursiveFindFiles( top, extensions, dirBlacklist, includePaths ):
     result = []
     for (dirpath, dirnames, filenames) in os.walk(top):
-        if not '.svn' in dirpath:
+        if not oneOf_a_in_b(dirBlacklist, dirpath):
             for f in filenames:
                 if os.path.splitext(f)[1] in extensions:
                     if includePaths:
@@ -41,8 +51,9 @@ def doxygenHtmlDocFileName( sourceFile ):
     return sourceFile.replace( '_', '__' ).replace( '.', '_8' ) + '.html'
 
 
-sourceFiles = recursiveFindFiles( paRootDirectory, [ '.c', '.h', '.cpp' ], True );
-docFiles = recursiveFindFiles( paHtmlDocDirectory, [ '.html' ], False );
+sourceFiles = recursiveFindFiles( os.path.join(paRootDirectory,'src'), [ '.c', '.h', '.cpp' ], ['.svn', 'mingw-include'], True )
+sourceFiles += recursiveFindFiles( os.path.join(paRootDirectory,'include'), [ '.c', '.h', '.cpp' ], ['.svn'], True )
+docFiles = recursiveFindFiles( paHtmlDocDirectory, [ '.html' ], ['.svn'], False )
 
 
 
@@ -52,26 +63,24 @@ def printError( f, message ):
     global currentFile
     if f != currentFile:
         currentFile = f
-        print f, ":"
-    print "\t!", message
+        print(f, ":")
+    print("\t!", message)
 
 
 for f in sourceFiles:
-    if not doxygenHtmlDocFileName( os.path.basename(f) ) in docFiles:
+    if doxygenHtmlDocFileName( os.path.basename(f) ) not in docFiles:
         printError( f, "no doxygen generated doc page" )
 
-    s = file( f, 'rt' ).read()
+    s = open( f, 'rt' ).read()
 
-    if not '/**' in s:
+    if '/**' not in s:
         printError( f, "no doxygen /** block" )  
     
-    if not '@file' in s:
+    if '@file' not in s:
         printError( f, "no doxygen @file tag" )
 
-    if not '@brief' in s:
+    if '@brief' not in s:
         printError( f, "no doxygen @brief tag" )
         
-    if not '@ingroup' in s:
+    if '@ingroup' not in s:
         printError( f, "no doxygen @ingroup tag" )
-        
-

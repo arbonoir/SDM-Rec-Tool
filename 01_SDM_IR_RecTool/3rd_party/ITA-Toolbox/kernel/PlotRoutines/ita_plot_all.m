@@ -83,7 +83,7 @@ setappdata(fgh,'ChannelNames',data.channelNames);
 setappdata(fgh,'Filename',data.fileName);
 setappdata(fgh,'AxisHandles',handles);
 setappdata(fgh,'ActiveAxis',handles(1));
-
+setappdata(fgh,'ita_domain', 'all');
 ita_plottools_cursors('on',[],handles(1))
 ita_plottools_cursors('off')
 

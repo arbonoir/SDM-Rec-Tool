@@ -103,7 +103,7 @@ classdef itaMeasuringStation
             inputChannels  = this.inputMeasurementChain.hw_ch;
             outputChannels = this.outputMeasurementChain.hw_ch;
             sr = ita_preferences('samplingRate');
-            MS = ita_measurement_setup_transferfunction(inputChannels, outputChannels, sr, 16, [5 sr/2], 'excitation', 'expsweep*', 'stopmargin', 0.1, 'outputamplification', '-10dB', 'comment', 'ita measuring station', 'pause', 0, 'averages', 1,'measurementChain',false);
+            MS = ita_measurement_setup_transferfunction(inputChannels, outputChannels, sr, 16, [5 sr/2], 'excitation', 'exp', 'stopmargin', 0.1, 'outputamplification', '-10dB', 'comment', 'ita measuring station', 'pause', 0, 'averages', 1,'measurementChain',false);
             MS.inputMeasurementChain  = this.inputMeasurementChain;
             MS.outputMeasurementChain = this.outputMeasurementChain;
             MS.calibrate;

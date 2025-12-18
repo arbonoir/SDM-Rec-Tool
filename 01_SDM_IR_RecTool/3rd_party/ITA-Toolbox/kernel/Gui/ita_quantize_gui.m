@@ -28,7 +28,7 @@ thisFuncStr  = [upper(mfilename) ':'];     %#ok<NASGU> Use to show warnings or i
 
 %% Initialization and Input Parsing
 idpList = 1;
-pList{idpList}.datatype = 'itaAudioInUse';
+pList{idpList}.datatype = 'itaAudio';
 pList{idpList}.description = 'pos1_data';
 pList{idpList}.default = '';
 pList{idpList}.helptext = '';

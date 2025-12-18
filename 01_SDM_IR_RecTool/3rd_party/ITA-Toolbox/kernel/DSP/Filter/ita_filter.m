@@ -35,10 +35,16 @@ verboseMode  = ita_preferences('verboseMode');  %#ok<NASGU> Use to show addition
 thisFuncStr  = [upper(mfilename) ':'];     % Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-sArgs        = struct('pos1_data','itaAudio','pos2_filter','string','pos3_type','string','pos4_specs','double','order',2);
+sArgs        = struct('pos1_data','itaAudio','pos2_filter','string','pos3_type','string','pos4_specs','double','order',1);
 [data,filter,type,specs,sArgs] = ita_parse_arguments(sArgs,varargin); 
 % order   =   sArgs.order; %pdi commented out
 
+warning([ upper(mfilename) ...
+    '::This function is very limited in its application and no longer maintained, please use ita_mpb_filter() instead.'])
+
+if sArgs.order > 1
+    error([upper(mfilename), '::Order parameter not supported - use ita_mpb_filter() !!!'])
+end
 
 %% Get data attributes
 data_samplingrate = data.samplingRate;

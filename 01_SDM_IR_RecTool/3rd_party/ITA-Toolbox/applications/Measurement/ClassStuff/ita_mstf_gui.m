@@ -105,10 +105,10 @@ argList = [argList {'freqRange'}];
 
 ele = numel(pList)+1;
 pList{ele}.description  = 'Signal Type';
-pList{ele}.helptext     = 'Exponential/logarithmic sweeps and linear sweeps can be choosen. A star * in the end causes the new routines (better signal processing!)';
+pList{ele}.helptext     = 'Exponential/logarithmic sweeps and linear sweeps can be choosen.)';
 pList{ele}.datatype     = 'char_popup';
 pList{ele}.default      = MS.type;
-pList{ele}.list         = 'exp|lin|expsweep*|linsweep*|ccxsweep*|expsweep|linsweep|ccxsweep|noise|swenlinsweep';
+pList{ele}.list         = 'exp|lin|noise';
 argList = [argList {'type'}];
 
 ele = numel(pList)+1;

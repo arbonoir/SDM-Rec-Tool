@@ -30,7 +30,7 @@ if nargin == 0 % generate GUI
     ele = 1;
     pList{ele}.description = 'itaAudio';
     pList{ele}.helptext    = 'This is the itaAudio Object for amplification or attenuation';
-    pList{ele}.datatype    = 'itaAudioInUse';
+    pList{ele}.datatype    = 'itaAudio';
     pList{ele}.default     = '';
     
     ele = 2;
@@ -55,7 +55,7 @@ if nargin == 0 % generate GUI
 end
 
 %% Initialization and Input Parsing
-error(nargchk(1,3,nargin,'string'));
+narginchk(1,3);
 sArgs           = struct('pos1_a','itaAudioFrequency','allchannels',false);
 [result, sArgs] = ita_parse_arguments(sArgs,varargin); 
 
@@ -66,11 +66,14 @@ end
 
 %% Normalize
 if sArgs.allchannels
+    gainApplied = nan(1, result.nChannels);
     for ch_idx = 1:result.nChannels
-        result.freqData(:,ch_idx) = result.freqData(:,ch_idx) ./ max(abs(result.freqData(:,ch_idx)));
+        gainApplied(1, ch_idx) = max(abs(result.freqData(:,ch_idx)));
+        result.freqData(:,ch_idx) = result.freqData(:,ch_idx) ./ gainApplied(1, ch_idx);
     end
 else
-    result.freqData = result.freqData ./ max(max(abs(result.freqData)));
+    gainApplied = max(max(abs(result.freqData)));
+    result.freqData = result.freqData ./ gainApplied;
 end
 
 %% Add history line
@@ -78,3 +81,4 @@ result = ita_metainfo_add_historyline(result,mfilename,varargin);
 
 %% Find Output parameter
 varargout(1) = {result};
+varargout(2) = {gainApplied};

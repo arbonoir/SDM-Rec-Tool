@@ -11,6 +11,6 @@ runMS = ita_guisupport_measurement_get_global_MS;
 result = runMS.run2file;
 
 %set the variables into the workspace
-ita_setinbase('lastANS', result);
-ita_getfrombase();
+setappdata(fgh, 'audioObj', result);
+ita_guisupport_updateGUI(fgh);
 end

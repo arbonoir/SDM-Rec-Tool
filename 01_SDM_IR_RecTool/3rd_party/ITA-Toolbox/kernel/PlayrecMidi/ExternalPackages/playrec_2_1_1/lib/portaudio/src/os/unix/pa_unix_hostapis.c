@@ -1,5 +1,5 @@
 /*
- * $Id: pa_unix_hostapis.c 1413 2009-05-24 17:00:36Z aknudsen $
+ * $Id$
  * Portable Audio I/O Library UNIX initialization table
  *
  * Based on the Open Source API proposed by Ross Bencina
@@ -26,13 +26,13 @@
  */
 
 /*
- * The text above constitutes the entire PortAudio license; however, 
+ * The text above constitutes the entire PortAudio license; however,
  * the PortAudio community also makes the following non-binding requests:
  *
  * Any person wishing to distribute modifications to the Software is
  * requested to send the modifications to the original developer so that
- * they can be incorporated into the canonical version. It is also 
- * requested that these non-binding requests be included along with the 
+ * they can be incorporated into the canonical version. It is also
+ * requested that these non-binding requests be included along with the
  * license above.
  */
 
@@ -43,8 +43,11 @@
 #include "pa_hostapi.h"
 
 PaError PaJack_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex index );
+PaError PaPulseAudio_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex index );
 PaError PaAlsa_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex index );
+PaError PaSndio_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex index );
 PaError PaOSS_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex index );
+PaError PaAudioIO_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex index );
 /* Added for IRIX, Pieter, oct 2, 2003: */
 PaError PaSGI_Initialize( PaUtilHostApiRepresentation **hostApi, PaHostApiIndex index );
 /* Linux AudioScience HPI */
@@ -59,47 +62,61 @@ PaUtilHostApiInitializer *paHostApiInitializers[] =
     {
 #ifdef __linux__
 
-#ifdef PA_USE_ALSA
+#if PA_USE_ALSA
         PaAlsa_Initialize,
 #endif
 
-#ifdef PA_USE_OSS
+#ifdef PA_USE_SNDIO
+        PaSndio_Initialize,
+#endif
+
+#if PA_USE_OSS
         PaOSS_Initialize,
 #endif
 
 #else   /* __linux__ */
 
-#ifdef PA_USE_OSS
+#ifdef PA_USE_SNDIO
+        PaSndio_Initialize,
+#endif
+
+#if PA_USE_OSS
         PaOSS_Initialize,
 #endif
 
-#ifdef PA_USE_ALSA
+#if PA_USE_ALSA
         PaAlsa_Initialize,
 #endif
 
 #endif  /* __linux__ */
 
-#ifdef PA_USE_JACK
+#if PA_USE_AUDIOIO
+        PaAudioIO_Initialize,
+#endif
+
+#if PA_USE_JACK
         PaJack_Initialize,
 #endif
                     /* Added for IRIX, Pieter, oct 2, 2003: */
-#ifdef PA_USE_SGI 
+#if PA_USE_SGI
         PaSGI_Initialize,
 #endif
 
-#ifdef PA_USE_ASIHPI
+#if PA_USE_ASIHPI
         PaAsiHpi_Initialize,
 #endif
 
-#ifdef PA_USE_COREAUDIO
+#if PA_USE_COREAUDIO
         PaMacCore_Initialize,
 #endif
 
-#ifdef PA_USE_SKELETON
+#if PA_USE_PULSEAUDIO
+        PaPulseAudio_Initialize,
+#endif
+
+#if PA_USE_SKELETON
         PaSkeleton_Initialize,
 #endif
 
         0   /* NULL terminated array */
     };
-
-int paDefaultHostApiIndex = 0;

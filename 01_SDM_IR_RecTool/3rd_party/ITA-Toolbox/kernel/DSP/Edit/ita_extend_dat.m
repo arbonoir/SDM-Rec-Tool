@@ -7,8 +7,8 @@ function [ varargout ] = ita_extend_dat( varargin )
 %   Syntax: ita_extend_dat( dat, nSamples, Options)
 %   Syntax: [dat1, dat2] = ita_extend_dat( dat1, dat2 )
 %
-%   FFTdegree is up to a value of 30
-%   nSamples is a value greater than 30
+%   FFTdegree is up to a value of (including) 35
+%   nSamples is a value greater than 35
 %
 %       Options (default):
 %           'forcesamples' (false):      Interpret second arguments as samples, even if lower than 35
@@ -59,7 +59,7 @@ if make_same_length
     asData2 = ita_metainfo_rm_historyline(asData2);
 else
     if sArgs.symmetric %pdi added
-        if new_number_samples < 35
+        if new_number_samples <= 35
             new_number_samples = round(2.^new_number_samples/2)*2;
         end
         old_number_samples = asData.nSamples;
@@ -79,11 +79,13 @@ else
         %extend data
         number_zeros           = new_number_samples - asData.nSamples;
         newSize = size(asData.time);
-        newSize(1) = number_zeros;
+        newSize(1) = new_number_samples;
         if sArgs.nozero
             asData.time             = [asData.time; bsxfun(@times,ones(newSize,asData.dataTypeOutput),asData.time(end,:))];
         else %normal case
-            asData.time             = [asData.time; zeros(newSize,asData.dataTypeOutput)];
+            tmp = zeros(newSize,asData.dataTypeOutput);
+            tmp(1:asData.nSamples,:)             = asData.time;
+            asData.time = tmp;
         end
         
     end

@@ -5,6 +5,8 @@ function varargout = ita_parse_arguments(varargin)
 %
 %  Syntax: sOut = ita_parse_arguments(sIn, argumentcell)
 %  Syntax: sOut = ita_parse_arguments(sIn, varargin)
+%  Syntax: [sOut,notFound] = ita_parse_arguments(sIn, varargin)
+%           Returns arguments that are not found in the struct
 %  Syntax: sOut = ita_parse_arguments(sIn, varargin, startidx) - start at
 %                   this index to parse varargin
 %  Syntax: sOut = ita_parse_arguments(sIn) - Only checking default settings
@@ -85,7 +87,7 @@ end
 
 %% Initialization
 % Number of Input Arguments
-error(nargchk(1,3,nargin,'string'));
+narginchk(1,3);
 % Find Audio Data
 if ~isstruct(varargin{1})
     error([thisFuncStr 'Input struct is missing or erroneous.'])
@@ -103,8 +105,9 @@ if nargin >= 2 %argument list is given
 else
     Arguments = [];
 end
-varargout = [];
+varargout = {};
 pos_num   = 0;  % needed for meaningful error messages
+notFoundCell = {};
 
 %% check field names for fixed position tokens
 field_token    = fieldnames(inStruct);
@@ -115,7 +118,7 @@ for idx = 1:length(field_token)
     token = field_token{idx};
     if numel(token) >= 5 % RSC - support for arguments shorter than 5 elements
         if strcmpi(token(1:3),'pos') && strcmpi(token(5),'_')
-            pos_num      = str2double(token(4)); %this is the fixed position number in the argument list
+            pos_num      = sscanf(token(4),'%d'); %this is the fixed position number in the argument list            
             token_new    = token(6:end); %get rid off prefix
             if pos_num <= numel(Arguments) % rsc - check if enough arguments are given
                 value        = Arguments{pos_num}; %get value/object
@@ -191,8 +194,7 @@ for idx = 1:length(field_token)
                         
                     case {'vector'}
                         if ~isvector(value)
-                            error([thisFuncStr callFuncStr 'Type does not match requirements, should be a vector but is:'])
-                            disp(value)
+                            error([thisFuncStr callFuncStr 'Type does not match requirements, should be a vector but is:', class(value)])
                         end
                     case {'char','string'} % pdi - I need this case
                         if ~ischar(value)
@@ -215,8 +217,7 @@ for idx = 1:length(field_token)
             %% finally set type and delete from argument list
             % in struct or varargout ???
             if nargout > 1 %everything with fixed position will be put in varargout
-                varargout = [varargout {value}]; %#ok<AGROW>
-                inStruct.(token_new) = value; %RSC - it would be wise to have those fields in the struct too
+                varargout = [varargout {value}]; %#ok<VARARG,AGROW>
             else
                 inStruct.(token_new) = value;
             end
@@ -229,7 +230,7 @@ end
 newArguments = {};
 for idx = 1:length(Arguments)
     if ~any(idx == killList) %RSC - faster than ismember
-        newArguments = [newArguments {Arguments{idx}}]; %#ok<AGROW> %append
+        newArguments = [newArguments Arguments(idx)]; %#ok<AGROW> %append
     end
 end
 Arguments = newArguments;
@@ -238,6 +239,8 @@ Arguments = newArguments;
 nArguments = length(Arguments);
 fieldNamesInStruct = fieldnames(inStruct);
 idx = 1;
+notFoundArguments = 0;
+
 while (idx <= nArguments) % go through all arguments
 %     if ~ischar(Arguments{idx}), error([thisFuncStr 'The arguments specified to call "' callFuncStr '" are not correct. Check the arguments, the corresponding values and the order.']); end;
     if ~ischar(Arguments{idx})
@@ -286,13 +289,28 @@ while (idx <= nArguments) % go through all arguments
             end
         end
     else
-        error([thisFuncStr callFuncStr 'There is no entry in the struct for this argument: ' lower(Arguments{idx})]);
+        notFoundArguments = 1;
+        % this handles the case that some arguments are not found
+        notFoundCell{end+1} =  Arguments{idx};%#ok<AGROW>
+        idx = idx + 1;
+        if idx <= nArguments
+            notFoundCell{end+1} =  Arguments{idx};%#ok<AGROW>
+            idx = idx + 1;
+        end
+        
     end
 end
 
+if notFoundArguments == 1
+    if nargout < 2
+        error([thisFuncStr callFuncStr 'Some arguments could not be found in the struct.'],0);
+    end
+end
+
+
 %% search for pseudo boolean - also done when no arguments specified
 cFieldNames = fieldnames(inStruct);
-for idx = 1:length(cFieldNames);
+for idx = 1:length(cFieldNames)
     if ischar(inStruct.(cFieldNames{idx}))
         if sum(strcmpi(inStruct.(cFieldNames{idx}),{'on','true'}))
             inStruct.(cFieldNames{idx}) = true;
@@ -303,6 +321,6 @@ for idx = 1:length(cFieldNames);
 end
 
 %% Output parameters
-varargout = [varargout {inStruct}];
+varargout = [varargout {inStruct} {notFoundCell}]; %#ok<VARARG>
 
 end

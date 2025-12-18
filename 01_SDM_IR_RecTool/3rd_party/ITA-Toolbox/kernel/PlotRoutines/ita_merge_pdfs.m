@@ -1,6 +1,6 @@
 function ita_merge_pdfs(varargin)
 %ITA_MERGE_PDFS - merges PDFs with ghostscript
-%  This function ++++ FILL IN INFO HERE +++
+%  This function merges PDF files. Ghostscript is required.
 %
 %  Syntax:
 %   ita_merge_pdfs(inputPDFs, outputPDF)
@@ -39,10 +39,13 @@ function ita_merge_pdfs(varargin)
 % Created:  20-Jul-2012
 
 
-if ~ita_preferences('isGhostscriptInstalled')
-    error('ghostscript not installed (or not activated in ita_preferences)')
+% if ~ita_preferences('isGhostscriptInstalled')
+%     error('ghostscript not installed (or not activated in ita_preferences)')
+% end
+if ~nargin 
+    guiCall
+    return
 end
-
 
 %% Initialization and Input Parsing
 sArgs        = struct('pos1_inputinputPdfs','anything', 'pos2_outputPdf', 'char', 'showOutput', false, 'deleteInputPDFs', false);
@@ -143,4 +146,11 @@ end
 
 
 %end function
+end
+
+function guiCall
+
+[fileNames, pathName] = uigetfile('*.pdf','MultiSelect', 'on');
+[outputFile, outputPath] = uiputfile('*.pdf', 'Save merged PDF', pathName);
+ita_merge_pdfs(ita_sprintf('%s%s%s', pathName, filesep, fileNames), fullfile(outputPath, outputFile), 'showOutput')
 end

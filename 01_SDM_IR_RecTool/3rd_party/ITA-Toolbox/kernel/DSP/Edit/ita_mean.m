@@ -26,7 +26,7 @@ function varargout = ita_mean(varargin)
 
 
 %% Initialization and Input Parsing
-error(nargchk(1,5,nargin,'string'));
+narginchk(1,5);
 sArgs           = struct('pos1_a','itaSuper','same_channelnames_only',false,'abs_gdelay',false);
 [result, sArgs] = ita_parse_arguments(sArgs,varargin);
 

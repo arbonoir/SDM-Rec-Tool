@@ -20,7 +20,7 @@ function varargout = ita_metainfo_find_frequencystring(varargin)
 
 
 %% Initialization and Input Parsing
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 if isa(varargin{1},'itaSuper')
     data = varargin{1};
 else

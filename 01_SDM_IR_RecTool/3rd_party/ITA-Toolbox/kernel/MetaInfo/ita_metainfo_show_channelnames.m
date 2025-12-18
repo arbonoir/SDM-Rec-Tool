@@ -22,7 +22,7 @@ function ita_header_show_channelnames(varargin)
 
 %% Initialization
 % Number of Input Arguments
-error(nargchk(1,2,nargin,'string'));
+narginchk(1,2);
 % Find Audio Data
 if isa(varargin{1},'itaSuper')
     audioObj = varargin{1};

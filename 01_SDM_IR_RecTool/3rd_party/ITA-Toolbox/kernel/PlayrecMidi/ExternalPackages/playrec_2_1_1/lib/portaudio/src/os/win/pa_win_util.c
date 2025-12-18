@@ -1,5 +1,5 @@
 /*
- * $Id: pa_win_util.c 1410 2009-04-07 10:08:48Z rossb $
+ * $Id$
  * Portable Audio I/O Library
  * Win32 platform-specific support functions
  *
@@ -27,13 +27,13 @@
  */
 
 /*
- * The text above constitutes the entire PortAudio license; however, 
+ * The text above constitutes the entire PortAudio license; however,
  * the PortAudio community also makes the following non-binding requests:
  *
  * Any person wishing to distribute modifications to the Software is
  * requested to send the modifications to the original developer so that
- * they can be incorporated into the canonical version. It is also 
- * requested that these non-binding requests be included along with the 
+ * they can be incorporated into the canonical version. It is also
+ * requested that these non-binding requests be included along with the
  * license above.
  */
 
@@ -41,20 +41,20 @@
  @ingroup win_src
 
  @brief Win32 implementation of platform-specific PaUtil support functions.
-
-    @todo Implement workaround for QueryPerformanceCounter() skipping forward
-    bug. (see msdn kb Q274323).
 */
- 
+
 #include <windows.h>
-#include <mmsystem.h> /* for timeGetTime() */
 
-#include "pa_util.h"
-
-#if (defined(WIN32) && (defined(_MSC_VER) && (_MSC_VER >= 1200))) /* MSC version 6 and above */
-#pragma comment( lib, "winmm.lib" )
+#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
+    #include <sys/timeb.h> /* for _ftime_s() */
+#else
+    #include <mmsystem.h> /* for timeGetTime() */
+    #if (defined(WIN32) && (defined(_MSC_VER) && (_MSC_VER >= 1200))) && !defined(_WIN32_WCE) /* MSC version 6 and above */
+    #pragma comment( lib, "winmm.lib" )
+    #endif
 #endif
 
+#include "pa_util.h"
 
 /*
    Track memory allocations to avoid leaks.
@@ -65,9 +65,9 @@ static int numAllocations_ = 0;
 #endif
 
 
-void *PaUtil_AllocateMemory( long size )
+void *PaUtil_AllocateZeroInitializedMemory( long size )
 {
-    void *result = GlobalAlloc( GPTR, size );
+    void *result = GlobalAlloc( GMEM_FIXED | GMEM_ZEROINIT, size );
 
 #if PA_TRACK_MEMORY
     if( result != NULL ) numAllocations_ += 1;
@@ -129,23 +129,49 @@ double PaUtil_GetTime( void )
 
     if( usePerformanceCounter_ )
     {
-        /* FIXME:
-            according to this knowledge-base article, QueryPerformanceCounter
-            can skip forward by seconds!
+        /*
+            Note: QueryPerformanceCounter has a known issue where it can skip forward
+            by a few seconds (!) due to a hardware bug on some PCI-ISA bridge hardware.
+            This is documented here:
             http://support.microsoft.com/default.aspx?scid=KB;EN-US;Q274323&
 
-            it may be better to use the rtdsc instruction using inline asm,
-            however then a method is needed to calculate a ticks/seconds ratio.
+            The work-arounds are not very paletable and involve querying GetTickCount
+            at every time step.
+
+            Using rdtsc is not a good option on multi-core systems.
+
+            For now we just use QueryPerformanceCounter(). It's good, most of the time.
         */
         QueryPerformanceCounter( &time );
         return time.QuadPart * secondsPerTick_;
     }
     else
     {
-#ifndef UNDER_CE    	
+#ifndef UNDER_CE
+    #if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
+        return GetTickCount64() * .001;
+    #else
         return timeGetTime() * .001;
+    #endif
 #else
         return GetTickCount() * .001;
-#endif                
+#endif
     }
+}
+
+void PaWinUtil_SetLastSystemErrorInfo( PaHostApiTypeId hostApiType, long winError )
+{
+    wchar_t wide_msg[1024]; //PA_LAST_HOST_ERROR_TEXT_LENGTH_
+    FormatMessageW(
+        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        winError,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        wide_msg,
+        1024,
+        NULL
+    );
+    char msg[1024];
+    WideCharToMultiByte( CP_UTF8, 0, wide_msg, -1, msg, 1024, NULL, NULL );
+    PaUtil_SetLastHostErrorInfo( hostApiType, winError, msg );
 }

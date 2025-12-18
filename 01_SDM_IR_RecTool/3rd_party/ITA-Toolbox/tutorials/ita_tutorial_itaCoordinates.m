@@ -1,9 +1,10 @@
-%% Tutorial about itaCoordinates - visualize spatial audio data (Demo)
+%% Visualize spatial audio data with itaCoordinates
 %
-% <<../../pics/ita_toolbox_logo_wbg.jpg>>
+% <<../../pics/ita_toolbox_logo_wbg.png>>
 % 
 % This tutorial demonstrates how to use the itaCoodinates class and how to
 % plot spatial/spherical audio data with the functions provided.
+% It is recommended to open it as a Live Script.
 % 
 % *HAVE FUN! and please report bugs* 
 %
@@ -18,7 +19,7 @@
 
 
 %% You can ignore the following line, if you look at the pdf or html document.
-error('Do not run this tutorial. Either use cell mode in the source, or look at the pdf or html documents.')
+error('Do not run this tutorial in one piece. Please execute each section seperately using Ctrl + Enter.')
 
 %% Start from scratch
 % We like to start with a totally empty workspace in order to avoid
@@ -78,9 +79,9 @@ coord.makeCyl
 % Let's make a common set of spherically distributed points, we pick a 
 % 5°/5° (theta/phi) resolution and visualize the result.
 coord = ita_generateSampling_equiangular(5,5);
-% we can visualize the points in the 3D space
+% we can visualize the points in the 3D space use your mouse to rotate, 
+% pan or zoom the plots
 scatter(coord);
-% here as later: use your mouse to rotate, pan or zoom the plots
 
 %% Line plot of some parts of the points
 % Plot the first 1000 points in the given order. This is useful for
@@ -89,7 +90,7 @@ plot(coord.n(1:1000));
 
 %% Balloon plot to visualize geometries
 % We can also plot a balloon stlye plot.
-surf(coord);
+surf(coord, coord.r);
 
 %% Define basic directivities and plot them
 % Some simple directivities, the magnitude is expressed by the radius of
@@ -128,11 +129,11 @@ surf(coord, data);
 % chosen.
 
 unitSphere = ones(coord.nPoints,1);
-surf(coord, unitSphere, data);
+surf(coord, data,'radius',unitSphere);
 % note that now the color resembles the magnitude of the data
 
 % by the way, the short form does the same:
-surf(coord, 1, data)
+surf(coord, data,'radius',1)
 
 
 %% Plotting phase details of the directivity
@@ -141,7 +142,7 @@ surf(coord, 1, data)
 % convert the matlab angle (-pi..pi) to positive phase (0..2pi)
 phase = angle(data) + pi;
 % phase on unit sphere
-surf(coord, 1, phase);
+surf(coord, phase,'radius',1);
 caxis([0 2*pi]);
 colormap hsv
 % here you have to adjust the color axis manually, as the surf plot
@@ -160,17 +161,13 @@ surf(coord_half, data_half)
 % plop factor gives the relative size of the triangles that we destroy
 % together with the larger ones.
 
-surf(coord_half,  1, data_half, 'plop', 4)
+surf(coord_half,  data_half, 'radius',1,'plop', 4)
 % The higher the plop factor, the more patches are preserved.
 
-%% Sample plot with lightning and additional parameters
-% itaCoordinates.plot hands over all additional parameters to MATLABs
-% built-in function 'patch.m', see the property browser for a detailed
-% list of available properties.
+%% Sample plot with changed lightning 
 sampleDirectivity = monopole + dipole + cos(coord.theta).^2;
-surf(coord, sampleDirectivity,'FaceAlpha',0.5,'EdgeColor','w');
-camlight
-% 'doc camlight' tells you more
+surf(coord, sampleDirectivity);
+camlight % 'doc camlight' tells you more
 
 %% Combine itaCoordinates with itaAudio data objects and make movies
 % When dealing with itaAudio data objects, we can use them directly to plot
@@ -178,7 +175,7 @@ camlight
 % For better quality, the absolute maximum should be determined and the
 % same axes length be chosen.
 
-return; %this is only for the publish() function
+% return; %this is only for the publish() function
 % take a lower spatial resolution of 22.5°/22.5° (theta/phi)
 coordSmall = ita_generateSampling_equiangular(22.5,22.5);
 % create an audio object
@@ -191,6 +188,6 @@ ao.freq = bsxfun(@times, 1e4./ao.freqVector, cardioid.');
 ao.freq = ao.freq + rand(size(ao.freq));
 % and plot the directivities of this audio object for some frequencies
 for freqs = 1000:1000:16000
-    surf(coordSmall, ao, freqs)
+    surf(coordSmall, ao.freq2value(freqs))
     pause(0.3);
 end

@@ -43,7 +43,7 @@ classdef itaMSTF < itaMSPlaybackRecord
     end
     
     properties(Dependent = true, Hidden = false, Transient = true, AbortSet = true, SetObservable = true) %triggers @this.init !!!
-        type                    % Type of signal 'expsweep','linsweep',or itaAudio
+        type                    % Type of signal 'exp','lin', 'noise', or itaAudio
     end
     
     properties(Dependent = true, Hidden = true, Transient = true, AbortSet = true, SetObservable = true) %triggers @this.init !!!
@@ -114,7 +114,7 @@ classdef itaMSTF < itaMSPlaybackRecord
                     fieldName = fieldnames(rmfield(this.saveobj,'dateSaved'));
                 end
                 
-                for ind = 1:numel(fieldName);
+                for ind = 1:numel(fieldName)
                     try
                         this.(fieldName{ind}) = varargin{1}.(fieldName{ind});
                     catch errmsg
@@ -368,18 +368,57 @@ classdef itaMSTF < itaMSPlaybackRecord
         
         function sweepRate = sweepRate(this,value)
             % get the sweep rate of the excitation
-            
-            %% sweep rate from analytic calculation, only using sweep parameters / PDI
-            nSamples        = ita_nSamples( this.fftDegree );
-            finalFreqRange  = this.finalFreqRange;
-            finalExcitationLength = nSamples/this.samplingRate - this.stopMargin;
-            sweepRate(1)    = log2(finalFreqRange(2)/finalFreqRange(1))/finalExcitationLength;
-            
-            %% sweep rate of analysis of excitation signal
-            sweepRate(2)    = ita_sweep_rate(this.raw_excitation,[2000 this.samplingRate/3]);
+            sweepRate = nan(2,1);
+            switch this.type
+                case 'exp'
+                    % equation is: f(t) = f0*2^(sweeprate*t)
+                    % sweep rate from analytic calculation, only using sweep parameters
+                    nSamples                = ita_nSamples( this.fftDegree );
+                    % use nSamples-1 here to be conform with sweep calculation
+                    % based on timeVector and chirp function
+                    finalExcitationLength   = (nSamples-1)/this.samplingRate - this.stopMargin;
+                    sweepRate(1)            = log2(this.finalFreqRange(2)/this.finalFreqRange(1))/finalExcitationLength;
+                case 'lin'
+                    % equation is: f(t) = f0*(1 + sweeprate*t)
+                    % sweep rate from analytic calculation, only using sweep parameters
+                    nSamples                = ita_nSamples( this.fftDegree );
+                    % use nSamples-1 here to be conform with sweep calculation
+                    % based on timeVector and chirp function
+                    finalExcitationLength   = (nSamples-1)/this.samplingRate - this.stopMargin;
+                    sweepRate(1)            = (this.finalFreqRange(2)/this.finalFreqRange(1) - 1)/finalExcitationLength;
+                otherwise
+                    
+            end
+            sweepRate(2)            = ita_sweep_rate(this.raw_excitation,'freqRange',[max(this.finalFreqRange(1),2000) min(this.finalFreqRange(2),this.samplingRate/3)],'type',this.type,'f0',this.finalFreqRange(1));
+
             if exist('value','var')
                 sweepRate = sweepRate(value);
             end
+        end
+        
+        function tstop = optimalStopMargin(this,D,RT)
+            % calculate optimal stop margin value, depending on sweep type
+            % and the inputs:
+            %      dynamic range D ( = 20dB + xdB for Tx, e.g. D = 20dB + 30dB for T30)
+            %      and reverb time RT, measured in the relevant frequency range
+            
+            RTdata = RT.freq2value(this.freqRange(1),this.freqRange(2));
+            RTfreqVec = RT.freqVector(RT.freq2index(this.freqRange(1),this.freqRange(2)));
+            f0 = RTfreqVec(1);
+            f1 = RTfreqVec(end);
+            
+            switch this.type
+                case 'exp'
+                    tstop = (D/60.*RTdata.*log(f1/f0) - this.excitation.trackLength.*log(f1./RTfreqVec))./log(RTfreqVec./f0);
+                case 'lin'
+                    tstop = (D/60.*RTdata.*(f1 - f0) - this.excitation.trackLength.*(f1 - RTfreqVec))./(RTfreqVec - f0);
+                otherwise
+            end
+            tstop(isinf(tstop)) = -Inf;
+            tstop(isnan(tstop)) = -Inf;
+            % larger than zero, but not more than 0.95 times the signal duration
+            % need to leave at least something for the actual sweep
+            tstop = min(max(max(tstop),0),0.95*this.excitation.trackLength);
         end
         
         function a = idealresponse(this)
@@ -487,11 +526,8 @@ classdef itaMSTF < itaMSPlaybackRecord
                 elseif ischar(this.type)
                     sr         = this.samplingRate;
                     fft_degree = this.fftDegree;
-                    freq_range = [min(this.freqRange(:)), max(this.freqRange(:))];
                     
                     switch lower(this.type)
-                        case{'expsweep','linsweep','expsweep*','linsweep*','ccxsweep*','ccxsweep'}
-                            this.excitation = ita_generate(lower(this.type),freq_range,this.stopMargin,sr,fft_degree);
                         case{'exp','lin'}
                             this.excitation = ita_generate_sweep('mode',this.type,'freqRange',this.finalFreqRange,'fftDegree',fft_degree,...
                                 'stopMargin',this.stopMargin,'samplingRate',this.samplingRate,'bandwidth',0);
@@ -532,6 +568,12 @@ classdef itaMSTF < itaMSPlaybackRecord
                 res = ita_dither(res,'type',this.ditherType,'nBits',this.nBits(1),'quiet',false);
             end
             
+            % if an outputequalization filter is set, convolve it with the
+            % excitation
+            if ~isempty(this.outputEqualizationFilters)
+                  res = res*this.outputEqualizationFilters;
+            end
+            
         end
         
         function set.compensation(this,value)
@@ -558,7 +600,7 @@ classdef itaMSTF < itaMSPlaybackRecord
                 if this.minimumphasedeconvolution
                     % get minimumphase part of deconvolution, neglect
                     % all-pass component
-                    [this.mCompensation, allpass_component] = ita_invert_spk_regularization(ita_extend_dat(this.raw_excitation,this.final_excitation.nSamples*factor),[min(this.freqRange(:)) max(this.freqRange(:))],'filter',this.filter);
+                    [this.mCompensation, allpass_component] = ita_invert_spk_regularization(ita_extend_dat(this.raw_excitation,this.final_excitation.nSamples*factor),[min(this.freqRange(:)) max(this.freqRange(:))],'filter',this.filter); %#ok<ASGLU>
                 else
                     this.mCompensation = ita_invert_spk_regularization(ita_extend_dat(this.raw_excitation,this.final_excitation.nSamples*factor),[min(this.freqRange(:)) max(this.freqRange(:))],'filter',this.filter);
                 end
@@ -614,7 +656,7 @@ classdef itaMSTF < itaMSPlaybackRecord
                 token = this.(list{idx});
                 if isempty(token) || isa(token,'itaSuper')
                     continue;
-                end;
+                end
                 
                 if ischar(token)
                     token = ['''' token ''''];
@@ -625,7 +667,7 @@ classdef itaMSTF < itaMSPlaybackRecord
                     end
                 else
                     error([upper(mfilename) '.commandline: What kind of field value is this?']);
-                end;
+                end
                 str = [str '''' list{idx} '''' ',' token ];
                 
                 if idx < numel(list)
@@ -638,7 +680,7 @@ classdef itaMSTF < itaMSPlaybackRecord
     
     %% Hidden methods
     methods(Hidden = true)
-        function display(this)
+        function display(this) %#ok<DISPLAY>
             this.excitation; %pre-init
             
             % Begin Display Start Line
@@ -649,7 +691,17 @@ classdef itaMSTF < itaMSPlaybackRecord
             % End Display Start Line
             
             % Start Display Values
-            disp(['   type       = ' this.type '       samplingRate  = ' num2str(this.samplingRate) '        nSamples      = ' num2str(this.nSamples)])
+            
+            % someone decided to put an excitation as this.type during
+            % optimization..
+            typeStr = '';
+            if isa(this.type,'itaAudio')
+                typeStr = 'custom';
+            else
+                typeStr = this.type;
+            end
+            
+            disp(['   type       = ' typeStr '       samplingRate  = ' num2str(this.samplingRate) '        nSamples      = ' num2str(this.nSamples)])
             oa = repmat(' ',1,7);
             oa_temp = (this.outputamplification);
             oa(1:length(oa_temp)) = oa_temp;

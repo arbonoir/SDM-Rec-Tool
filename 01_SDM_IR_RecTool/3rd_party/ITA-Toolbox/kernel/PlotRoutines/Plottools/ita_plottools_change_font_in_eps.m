@@ -27,7 +27,7 @@ function varargout = ita_plottools_change_font_in_eps(varargin)
 % Created:  06-Aug-2009 
 
 %% Initialization and Input Parsing
-error(nargchk(1,3,nargin,'string'));
+narginchk(1,3);
 
 filename_in  = varargin{1};
 font_name    = 'Times';

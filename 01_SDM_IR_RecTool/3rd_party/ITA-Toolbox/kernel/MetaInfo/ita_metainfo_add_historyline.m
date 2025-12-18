@@ -34,7 +34,7 @@ thisFuncStr  = [upper(mfilename) ':'];
 %% Initialization
 withSubs     = false; %true for subhistory entries
 % Number of Input Arguments
-error(nargchk(1,4,nargin,'string'));
+narginchk(1,4);
 if ischar(varargin{end}) && strcmpi(varargin{end},'withsubs')
     withSubs = true;
 end
@@ -96,8 +96,22 @@ if nargin >= 3 % the function had some input arguments
         end
     elseif isa(arguments,'itaSuper')
         argumentStr = '(audioObj)';
+       
+        if withSubs
+            sub_historylines{length(sub_historylines)+1} = arguments.history; %#ok<AGROW>
+        end
     end
-    historyline = [historyline argumentStr];
+    
+    dateLine = '';
+    
+    try 
+       dateLine = datestr(now); 
+       dateLine  = [dateLine ' - '];
+    catch e
+        
+    end
+    
+    historyline = [dateLine historyline argumentStr];
 end
 
 %% Add the history line ?�pdi:faster

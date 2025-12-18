@@ -47,7 +47,7 @@ function varargout = ita_spk2frequencybands(varargin)
 thisFuncStr  = [upper(mfilename) ':'];    % Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-error(nargchk(1,13,nargin,'string'));
+narginchk(1,13);
 sArgs   = struct('pos1_spk','itaSuper','bandsperoctave',ita_preferences('bandsperoctave'),'method','added','freqRange',ita_preferences('freqRange'),'weighting','','squared_input',false,'mode','fft','order',10,'class',0);
 [input,sArgs] = ita_parse_arguments(sArgs,varargin);
 
@@ -86,6 +86,8 @@ else
     exponent = 2;
 end
 
+bw_desgn = 2*sArgs.bandsperoctave;
+
 %% Filter
 % apply filter and reorganize data
 if strcmp(mode,'filter') %mli version
@@ -96,21 +98,27 @@ if strcmp(mode,'filter') %mli version
     end
     
     % sum the squared values
-    band_values = zeros(numel(fmExact),input.nChannels);
-    for idxch = 1:numel(fmExact)
-        % don't be confused: sqrt will be extracted at the end!
-        band_values(idxch,:) = sum(abs(squeeze(result.freq(:,idxch,:))).^exponent);
+    band_values = squeeze(sum(abs(result.freq).^exponent,1));
+    if input.nChannels == 1
+        band_values = band_values(:);
+    end
+    
+    % for energy signals:
+    % to get average passband response, compare to filter response
+    if strcmpi(sArgs.method,'averaged')
+        Beff = ita_mpb_filter(ita_generate('flat',1,input.samplingRate,input.fftDegree),'oct',sArgs.bandsperoctave,'class',sArgs.class,'order',sArgs.order, 'octavefreqrange', sArgs.freqRange); % apply mpb filter
+        Beff = sum(abs(Beff.freq).^exponent,1).';
+        band_values = band_values./Beff;
     end
     
     % FFT Mode
     % center frequencies and band limits
     % frequency bands according to DIN EN 61260
 elseif strcmp(mode,'fft') %fast version
-    bw_desgn = 2*sArgs.bandsperoctave;
     bandUpperLimit = fmExact*(2^(1/bw_desgn)); % upper limit for every center frequency
     bandLowerLimit = fmExact/(2^(1/bw_desgn)); % lower limit for every center frequency
     
-    %% calculate band values    
+    %% calculate band values
     linespectrum_values = input.freqData;
     
     number_of_lines_in_band = zeros(length(fmExact),1);
@@ -123,9 +131,9 @@ elseif strcmp(mode,'fft') %fast version
         if numel(sel_idx) > 0
             switch lower(sArgs.method)
                 case 'added'
-                    band_values(idx_fm,:) = sum((abs(linespectrum_values(sel_idx,:))).^exponent, 1); %added field quantity squared
+                    band_values(idx_fm,:) = sum(abs(linespectrum_values(sel_idx,:)).^exponent, 1); %added field quantity squared
                 case 'averaged'
-                    band_values(idx_fm,:) = mean((abs(linespectrum_values(sel_idx,:))).^exponent, 1); %averaged field quantity squared
+                    band_values(idx_fm,:) = mean(abs(linespectrum_values(sel_idx,:)).^exponent, 1); %averaged field quantity squared
                 otherwise
                     disp('unknown method!')
             end
@@ -172,9 +180,9 @@ end
 if strcmp(mode,'fft')
     tmp = struct('spk2frequencybands_number_of_lines_in_band',number_of_lines_in_band);
     if iscell(result.userData)
-        result.userData = [result.userData(:); {tmp}];    
+        result.userData = [result.userData(:); {tmp}];
     else
-        result.userData = {result.userData; tmp};    
+        result.userData = {result.userData; tmp};
     end
 end
 %% Add history line

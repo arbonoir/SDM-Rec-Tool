@@ -3,12 +3,15 @@ Notes about WDM-KS host API
 
 Status history
 --------------
+16th January 2011:
+Added support for WaveRT device API (Vista and later) for even lesser 
+latency support.
+
 10th November 2005:
 Made following changes:
  * OpenStream: Try all PaSampleFormats internally if the the chosen
      format is not supported natively.  This fixed several problems
-     with soundcards that soundcards that did not take kindly to
-     using 24-bit 3-byte formats.
+     with soundcards that did not take kindly to using 24-bit 3-byte formats.
  * OpenStream: Make the minimum framesPerHostIBuffer (and framesPerHostOBuffer)
      the default frameSize for the playback/recording pin.
  * ProcessingThread: Added a switch to only call PaUtil_EndBufferProcessing
@@ -49,7 +52,7 @@ by the user, and can be limited in functionality or difficult to use.
 
 This is where the PortAudio "WDM-KS" host implementation comes in.
 It directly connects PortAudio to the same Kernel Streaming API which
-those ASIO bridges use. This avoids the mixing penatly of DirectX, 
+those ASIO bridges use. This avoids the mixing penalty of DirectX, 
 giving at least as good latency as any ASIO driver, but it has the
 advantage of working with ANY Windows audio hardware which is available
 through the normal MME/DirectX routes without the user requiring 
@@ -71,7 +74,7 @@ In PortAudio terms, this means having a stream Open on a WDMKS device.
 Usage
 -----
 To add the WDMKS backend to your program which is already using 
-PortAudio, you must undefine PA_NO_WDMKS from your build file,
+PortAudio, you must define PA_USE_WDMKS=1 in your build file,
 and include the pa_win_wdmks\pa_win_wdmks.c into your build.
 The file should compile in both C and C++.
 You will need a DirectX SDK installed on your system for the

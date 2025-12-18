@@ -7,19 +7,49 @@ function [] = ita_delete_toolboxpaths(varargin)
 % </ITA-Toolbox>
 
 
-%% get current path list
-x = pwd;
-cd (ita_toolbox_path())
-cd ..
-pathStr  = [path() pathsep];
-tokenStr = regexp(pathStr,pathsep,'split');
-tbPath      = ita_toolbox_path;
-paths2delete = tokenStr(~cellfun(@isempty,strfind(tokenStr,tbPath)));
+%% remove ita_pathhandling portion in user startup script
+ita_startup_content = ita_startup_script_content();
+startup_file_user = fullfile(userpath(), 'startup.m');
 
-if ~isempty(paths2delete)
-    rmpath(paths2delete{:})
+%% remove existing paths from current matlab paths
+if exist('ita_pathToAddOnStartup.m','file')
+    pathStr  = ita_pathToAddOnStartup();
+    paths2delete = regexp(pathStr,pathsep,'split');
+
+    if ~isempty(paths2delete)
+        rmpath(paths2delete{:})
+    end
 end
-savepath();
 
-cd(x);
+%% remove automatic addpath on from startup script
+if exist(startup_file_user, 'file')
+    % check if a startup file exists and append userpath if necessary
+    startup_script_content = splitlines(fileread(startup_file_user));
+    if ~isempty(startup_script_content)
+        ita_startup_content = splitlines(sprintf(ita_startup_script_content()));
+        ita_startup_content_old = splitlines(sprintf(ita_startup_script_content('Version',9)));
+    
+        %remove ita part
+        lines2remove = strcmp(startup_script_content,ita_startup_content{1}) | ...
+                       strcmp(startup_script_content,ita_startup_content{2}) | ...
+                       strcmp(startup_script_content,ita_startup_content_old{1}) | ...
+                       strcmp(startup_script_content,ita_startup_content_old{2});
+    
+        startup_script_content = join(startup_script_content(~lines2remove),'\n');
+    
+        % and save
+        if isempty(startup_script_content{:})
+            delete(startup_file_user);
+        else
+            fileID = fopen(startup_file_user, 'w');
+            fprintf(fileID,"%s\n", startup_script_content{:});
+            fclose(fileID);
+        end
+    end
+end
 
+%% delete file containing ita_paths which was called on startup
+if exist('ita_pathToAddOnStartup.m','file')
+    fileToDelete = which('ita_pathToAddOnStartup.m');
+    delete(fileToDelete)
+end

@@ -30,9 +30,9 @@ function varargout = ita_errorlog_add(varargin)
 
 
 %% Initialization and Input Parsing
-error(nargchk(2,2,nargin,'string'));
+narginchk(2,2);
 sArgs        = struct('pos1_data','itaSuper','pos2_errorMessage','anything');
-[data,errorMessage,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[data,errorMessage,sArgs] = ita_parse_arguments(sArgs,varargin); 
 
 %% +++Body - Your Code here+++ 'result' is an audioObj and is given back 
 data.errorLog{end+1} = errorMessage;

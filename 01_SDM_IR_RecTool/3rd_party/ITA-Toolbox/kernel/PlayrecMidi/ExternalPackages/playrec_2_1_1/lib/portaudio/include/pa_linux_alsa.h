@@ -2,7 +2,7 @@
 #define PA_LINUX_ALSA_H
 
 /*
- * $Id: pa_linux_alsa.h 1414 2009-05-24 17:02:10Z aknudsen $
+ * $Id$
  * PortAudio Portable Real-Time Audio Library
  * ALSA-specific extensions
  *
@@ -29,13 +29,13 @@
  */
 
 /*
- * The text above constitutes the entire PortAudio license; however, 
+ * The text above constitutes the entire PortAudio license; however,
  * the PortAudio community also makes the following non-binding requests:
  *
  * Any person wishing to distribute modifications to the Software is
  * requested to send the modifications to the original developer so that
- * they can be incorporated into the canonical version. It is also 
- * requested that these non-binding requests be included along with the 
+ * they can be incorporated into the canonical version. It is also
+ * requested that these non-binding requests be included along with the
  * license above.
  */
 
@@ -43,6 +43,7 @@
  *  @ingroup public_header
  *  @brief ALSA-specific PortAudio API extension header file.
  */
+
 #include "portaudio.h"
 
 #ifdef __cplusplus
@@ -91,6 +92,13 @@ PaError PaAlsa_SetNumPeriods( int numPeriods );
  * short interval inbetween).
  */
 PaError PaAlsa_SetRetriesBusy( int retries );
+
+/** Set the path and name of ALSA library file if PortAudio is configured to load it dynamically (see
+ *  PA_ALSA_DYNAMIC). This setting will overwrite the default name set by PA_ALSA_PATHNAME define.
+ * @param pathName Full path with filename. Only filename can be used, but dlopen() will lookup default
+ *                 searchable directories (/usr/lib;/usr/local/lib) then.
+ */
+void PaAlsa_SetLibraryPathName( const char *pathName );
 
 #ifdef __cplusplus
 }

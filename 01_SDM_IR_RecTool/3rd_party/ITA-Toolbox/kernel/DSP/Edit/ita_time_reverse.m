@@ -26,9 +26,9 @@ thisFuncStr  = [upper(mfilename) ':'];     %#ok<NASGU>
 
 %% Initialization
 %Inarg checking
-error(nargchk(1,1,nargin));
+narginchk(1,1);
 sArgs   = struct('pos1_num','itaAudioTime');
-[result, sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[result, sArgs] = ita_parse_arguments(sArgs,varargin); 
 
 %% Time Reversing
 result.dat = result.dat(:,end:-1:1);

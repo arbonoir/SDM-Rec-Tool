@@ -49,7 +49,7 @@ function result = ita_fft(varargin)
 % % verboseMode  = ita_preferences('verboseMode');
 
 %% Initialization
-error(nargchk(1,2,nargin));
+narginchk(1,2);
 % % if nargin == 2
 % %     try  %#ok<TRYNC>
 % %         if strcmpi(varargin{2},'silent')

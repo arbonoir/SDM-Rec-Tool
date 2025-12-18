@@ -23,7 +23,7 @@ function varargout = ita_plot_gui(varargin)
 % Created:  19-Jun-2009 
 
 %% Initialization and Input Parsing
-%error(nargchk(1,1,nargin,'string'));
+%narginchk(1,1);
 sArgs  = struct('name','','defaultdomain','spk');
 [Args] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
 
@@ -32,7 +32,8 @@ sArgs  = struct('name','','defaultdomain','spk');
 % tic
 whandle = ita_main_window();
 domain  = ita_guisupport_currentdomain();
-data    = ita_getfrombase(sArgs.name); %
+data    = getappdata(whandle,'audioObj');
+% data    = ita_getfrombase(sArgs.name); %
 %uiwait(whandle); %Wait till plotting is finished, makes some trouble
 
 %% Clear figure and redraw menu

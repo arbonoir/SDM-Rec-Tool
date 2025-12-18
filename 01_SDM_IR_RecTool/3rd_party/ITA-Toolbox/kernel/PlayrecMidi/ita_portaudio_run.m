@@ -118,7 +118,7 @@ sArgs.keepsamplingrate  = false; %puh, schwierig
 sArgs.nonblockingbuffersize = 16; %if block=false or datasize > maxpagesize!
 sArgs.singleprecision   = false;
 sArgs.reset             = false;
-sArgs.maxpagesize       = 2^22; % Split audio data into several pages - each max. maxpagesize samples!
+sArgs.maxpagesize       = 2^18; % Split audio data into several pages - each max. maxpagesize samples!
 
 playrecBufferSize = ita_preferences('playrecBufferSize');
 if ~isnumeric(playrecBufferSize)
@@ -266,7 +266,7 @@ if playback
     if verboseMode==2, ita_metainfo_show_channelnames(data); end;
     
     %% Check levels - Normalizing
-    peak_value = max(abs(data.timeData(:)));
+    peak_value = max(max(abs(data.timeData)));
     if (peak_value > 1) || (normalize_output)
         ita_verbose_info('Oh Lord! Levels too high for playback. Normalizing...',0)
         data = ita_normalize_dat(data); %PDI: bugfix, there was no 'data =' on the left handside
@@ -420,6 +420,7 @@ while timeout %normally only one time, one loop
                 waitFor = sArgs.recsamples ./ sArgs.samplingRate;
             elseif playback
                 ita_verbose_info('start playback',1)
+                sArgs.block = true;
                 pageno = hPlayRec('play',single(data.timeData),out_channel_vec);
                 waitFor = data.nSamples ./ data.samplingRate;
             else
@@ -429,7 +430,7 @@ while timeout %normally only one time, one loop
             hPlayRec('reset');
             ita_verbose_info('TIMEOUT, I will try a reset and redo',0)
             ita_verbose_info(errmsg.message,0);
-            timeout = true;
+            timeout = true;            
             break
         end
         
@@ -450,7 +451,7 @@ while timeout %normally only one time, one loop
         
         pause(0.01) % pdi changed: was 0.1 before
         lastSample = 1;
-        if sArgs.block && ~timeout && ~using_more_pages
+        if sArgs.block && ~timeout %&& ~using_more_pages
             %if verboseMode || max_buffer_reached, disp('ITA_PORTAUDIO:
             %waiting for results'), end;%pdi:please be quiter
             isfinished = hPlayRec('isFinished',pageno);
@@ -515,7 +516,7 @@ while timeout %normally only one time, one loop
                             N = max(size(z));
                             out_peak = 20.*log10(max(abs(data.dat(:,lastSample:N)),[],2));
                         end
-                        mon_data(:,1) = [out_peak; 20.*log10(max(abs(z(:,lastSample:end)),[],2))];
+                        mon_data = [out_peak; 20.*log10(max(abs(z(:,lastSample:end)),[],2))];
                         lastSample    = size(z,2);
                         ita_portaudio_monitor('update',mon_data);
                     elseif playback && ~record
@@ -653,6 +654,13 @@ if record
         ita_verbose_info('There are empty channels in the audio signal! You''d better check your settings!',0)
     end
     [channelvolumes, index] = max(max(abs(recordData.timeData),[],1));
+    
+    % jri: to detect non working microphones etc, the minimum of the
+    % maximums on the channels is also outputted
+    if length(in_channel_vec) > 1
+        [channelvolumesMin, indexMin] = min(max(abs(recordData.timeData),[],1));
+        ita_verbose_info(['Minimum digital level: ' int2str(20*log10(channelvolumesMin)) ' dBFS on channel: ' int2str(in_channel_vec(indexMin))],0);
+    end
     ita_verbose_info(['Maximum digital level: ' int2str(20*log10(channelvolumes)) ' dBFS on channel: ' int2str(in_channel_vec(index))],0);
 end
 

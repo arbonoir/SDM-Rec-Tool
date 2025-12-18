@@ -25,7 +25,7 @@ function data = ita_integrate(varargin)
 % Created:  13-Jul-2009
 
 %% Initialization and Input Parsing
-error(nargchk(1,3,nargin,'string'));
+narginchk(1,3);
 sArgs        = struct('pos1_data','itaSuper','domain','freq');
 [data,sArgs] = ita_parse_arguments(sArgs,varargin);
 

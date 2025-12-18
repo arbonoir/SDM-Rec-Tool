@@ -25,7 +25,7 @@ if nargin == 0 % generate GUI
     ele = 1;
     pList{ele}.description = 'First itaAudio';
     pList{ele}.helptext    = 'This is the first itaAudio for addition';
-    pList{ele}.datatype    = 'itaAudioInUse';
+    pList{ele}.datatype    = 'itaAudio';
     pList{ele}.default     = '';
     
     ele = 2;
@@ -54,12 +54,33 @@ if nargin == 0 % generate GUI
     end
     return;
 else
-    error(nargchk(2,2,nargin,'string'));
+    narginchk(2,2);
 end
 
 %% Find Audio Data
 sArgs   = struct('pos1_a','itaSuper','pos2_b','anything');
-[a,b,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[a,b,sArgs] = ita_parse_arguments(sArgs,varargin); 
+
+if (size(a.timeData,1) ~= size(b.timeData,1) && (a.samplingRate == b.samplingRate))
+    ita_verbose_info('ITA_ADD: length does not match, adding zeros...',1);
+    
+    a.nSamples = max([length(a.timeData) length(b.timeData)]);
+    b.nSamples = max([length(a.timeData) length(b.timeData)]);
+end
+
+if (size(a.timeData,2) ~= size(b.timeData,2) && (a.samplingRate == b.samplingRate))
+    ita_verbose_info('ITA_ADD: channel count does not match, adding empty channels...',1);
+    
+    chCountA = size(a.timeData,2);
+    chCountB = size(b.timeData,2);
+
+    if (chCountA < chCountB)
+        a.timeData = [ a.timeData zeros(a.nSamples,chCountB-chCountA) ];
+    elseif (chCountA > chCountB)
+        b.timeData = [ b.timeData zeros(b.nSamples,chCountA-chCountB) ];
+    end
+    
+end
 
 result = a + b;
 

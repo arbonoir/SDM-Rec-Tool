@@ -71,7 +71,7 @@ thisFuncStr  = [upper(mfilename) ':'];     %#ok<NASGU>
 
 %% Initialization
 % Number of Input Arguments
-error(nargchk(1,5,nargin,'string'));
+narginchk(1,5);
 
 % optional inputs:   resType, format, SampleRate, nSamples
 [format, SampleRate, nSamples, interpType] = parseoptionalinput(length(varargin), varargin);

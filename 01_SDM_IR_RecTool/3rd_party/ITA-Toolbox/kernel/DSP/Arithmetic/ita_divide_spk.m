@@ -26,7 +26,7 @@ if nargin == 0
     ele = 1;
     pList{ele}.description = 'Numerator';
     pList{ele}.helptext    = 'This is the first itaAudio for the numerator';
-    pList{ele}.datatype    = 'itaAudioInUse';
+    pList{ele}.datatype    = 'itaAudio';
     pList{ele}.default     = '';
     
     ele = length(pList) + 1;

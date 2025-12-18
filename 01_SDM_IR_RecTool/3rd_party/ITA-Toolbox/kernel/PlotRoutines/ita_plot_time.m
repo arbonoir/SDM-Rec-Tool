@@ -52,6 +52,7 @@ sArgs = struct('pos1_data','itaSuper','nodb',true,'figure_handle',[],'axes_handl
     'fontsize',ita_preferences('fontsize'), 'xlim',[],'ylim',[],'axis',[],'aspectratio',[],'hold','off','precise',true,'ylog',false,'plotcmd',@plot,'plotargs',[],'fastmode',0);
 [data, sArgs] = ita_parse_arguments(sArgs, varargin);
 
+
 % bugfix for multiple instances (mpo)
 if numel(data) > 1
     ita_verbose_info([thisFuncStr 'There is more than one instance stored in that object. Plotting the first one only.'],0);
@@ -151,10 +152,12 @@ if sArgs.nodb
     sArgs.plotType   = 'time'; %Types: time, mag, phase, gdelay
     sArgs.yAxisType  = 'linear'; %Types: db and linear
     sArgs.figureName = ['Time Domain - ' data.comment];
+    domainName = 'time';
 else
     sArgs.plotType   = 'time_db'; %Types: time, mag, phase, gdelay
     sArgs.yAxisType  = 'db'; %Types: db and linear
     sArgs.figureName = ['Time Domain (dB) - ' data.comment];
+    domainName = 'time in db';
 end
 sArgs.xUnit      = 's';
 sArgs.yUnit      = '';
@@ -162,8 +165,9 @@ sArgs.titleStr   = data.comment;
 sArgs.xLabel     = 'Time in seconds';
 sArgs.yLabel     = 'Amplitude';
 sArgs.data       = data; %used for domain entries in gui
-[fgh,axh] = ita_plottools_figurepreparations(data,fgh,axh,lnh,'options',sArgs);
 
+[fgh,axh] = ita_plottools_figurepreparations(data,fgh,axh,lnh,'options',sArgs);
+setappdata(fgh,'ita_domain', domainName);
 %% Return the figure handle
 if nargout
     varargout(1) = {fgh};

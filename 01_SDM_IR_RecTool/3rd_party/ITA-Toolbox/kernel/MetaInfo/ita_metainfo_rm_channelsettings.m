@@ -29,7 +29,7 @@ function varargout = ita_metainfo_rm_channelsettings(varargin)
 
 %% Initialization
 % Number of Input Arguments
-error(nargchk(1,2,nargin,'string'));
+narginchk(1,2);
 % Find Audio Data
 if isa(varargin{1},'itaSuper')
     as = varargin{1};

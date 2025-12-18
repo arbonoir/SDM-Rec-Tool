@@ -33,7 +33,7 @@ if nargin == 0 % generate GUI
     ele = 1;
     pList{ele}.description = 'itaAudio';
     pList{ele}.helptext    = 'This is the itaAudio Object for amplification or attenuation';
-    pList{ele}.datatype    = 'itaAudioInUse';
+    pList{ele}.datatype    = 'itaAudio';
     pList{ele}.default     = '';
     
     ele = 2;
@@ -65,9 +65,9 @@ end
 
 
 %% Initialization
-error(nargchk(2,3,nargin,'string'));
+narginchk(2,3);
 sArgs   = struct('pos1_a','itaSuper','pos2_mult','anything');
-[data,multFactor,sArgs] = ita_parse_arguments(sArgs,varargin(1:2)); %#ok<NASGU>
+[data,multFactor,sArgs] = ita_parse_arguments(sArgs,varargin(1:2)); 
 
 dB_flag = false;
 if nargin == 3

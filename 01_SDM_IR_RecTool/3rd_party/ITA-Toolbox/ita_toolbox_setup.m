@@ -5,7 +5,7 @@ function varargout = ita_toolbox_setup(varargin)
 %  Call: ita_toolbox_setup
 %
 %   See also ita_toolbox_documentation.
-%
+
 %   Reference page in Help browser
 %      <a href="matlab:doc ita_toolbox_setup">doc ita_toolbox_setup</a>
 %
@@ -18,7 +18,7 @@ function varargout = ita_toolbox_setup(varargin)
 % </ITA-Toolbox>
 
 
-warning off %#ok<WNOFF>
+warning off
 close all
 clc
 
@@ -46,18 +46,37 @@ if ~signalfound
 end
 
 %% Get root of RWTH-ITA-Toolbox
-fullpath = which('ita_toolbox_setup.m');
-fullpath = fileparts(fullpath);
-addpath(fullpath); %add standard path here
+tb_setup_path = which('ita_toolbox_setup.m'); 
+tb_base_path = fileparts(tb_setup_path);
+
+%% check if a toolbox is already installed in a differnt location -> uninstall
+if exist("ita_preferences.m","file")
+    existing_tb_base_path = fileparts(fileparts(which('ita_preferences')));
+    if ~strcmp(existing_tb_base_path, tb_base_path)
+        response = questdlg(sprintf('An active ITA-Toolbox installation was found in %s. \n The other toolbox will be uninstalled berfore the new install.',existing_tb_base_path),...
+                            'Uninstall existing Toolbox?',...
+                            'Uninstall', 'Cancel', 'Uninstall');
+        switch response
+            case 'Uninstall'
+                warning('Uninstalling existing install of ITA-Toolbox before new install!')
+                run(fullfile(existing_tb_base_path,'ita_toolbox_uninstall.m'));
+            otherwise 
+                warning('Installation of ITA-Toolbox was canceled by the user!')
+                return;
+        end
+    end
+end
 
 %% Add path to kernel, so basic functions are available
-addpath([fullpath filesep 'kernel']);
+addpath(tb_base_path);
+addpath([tb_base_path, filesep, 'kernel']);
+addpath([tb_base_path, filesep, 'kernel', filesep 'StandardRoutines']);
 
-%% Add userpath, here might be our pathdef.m
+%% Add userpath, here might be the startup script that handles adding our paths on startup
 addpath(userpath);
 
 %% ITA-Toolbox path handling
-% this function has to be in the kernel directory!!!
+% this function has to be in the kernel directory!
 ita_path_handling();
 
 %% License and Key?
@@ -79,7 +98,7 @@ ita_preferences(prefs);    % Set all prefs, non-existing ones will be ignored
 %% WIN64 and no ASIO sound cards
 if strcmpi(mexext,'mexw64')
     % check for sound card list
-    [devStrIn, devIDsIn, devStrOut, devIDsOut] = ita_portaudio_menuStr();
+    [~, devIDsIn, ~, devIDsOut] = ita_portaudio_menuStr();
     if numel(devIDsIn) == 1 && numel(devIDsOut) == 1 && ita_preferences('playrec') > 0
         ita_preferences('playrec',mod(ita_preferences('playrec'),2)+1);
         ccx
@@ -87,7 +106,7 @@ if strcmpi(mexext,'mexw64')
         disp('Trying different playrec MEX-file to find sound cards...')
         pause(0.5)
         % search with alternative playrec mex-file
-        [devStrIn, devIDsIn, devStrOut, devIDsOut] = ita_portaudio_menuStr();
+        [~, devIDsIn, ~, devIDsOut] = ita_portaudio_menuStr();
         if numel(devIDsIn) == 1 && numel(devIDsOut) == 1 && ita_preferences('playrec') > 0
             ita_preferences('playrec',mod(ita_preferences('playrec'),2)+1);
             ccx
@@ -98,20 +117,20 @@ if strcmpi(mexext,'mexw64')
 end
 
 %% build search database
-if ~exist([ita_toolbox_path filesep 'HTML' filesep 'helpsearch'],'dir')
-    builddocsearchdb( [ita_toolbox_path filesep 'HTML' ] ); %generate help search
-    rehash toolboxcache
-end
+% Temporarily disabled due to builddocsearchdb in 2014b and newer
+% if ~exist([ita_toolbox_path filesep 'HTML' filesep 'helpsearch'],'dir')
+%     builddocsearchdb( [ita_toolbox_path filesep 'HTML' ] ); %generate help search
+%     rehash toolboxcache
+% end
+
+%% start third party APIs
+% if ~exist([ita_toolbox_path filesep 'external_packages' filesep 'sofa' filesep 'API_MO' filesep 'conventions' filesep 'GeneralFIR-a.mat' ],'file')
+%     disp('Installing SOFA conventions (external module):');
+%     ;
+% end
 
 %% clean up old filters
 ita_delete_filter();
-
-%% show toolbox apps if possible
-if ~exist('ita_apps.m', 'file')
-    disp('no ITA-Toolbox applications found')
-else
-    ita_apps()
-end
 
 %% Then show gui
 if usejava('desktop') %Only if desktop available (non_cluster)
@@ -129,8 +148,9 @@ else
     ita_disp()
     disp('<a href="matlab:ita_toolbox_gui"> Click here to start with a GUI ''ita_toolbox_gui()'' to start working...</a>')
     ita_disp()
-    disp('<a href="matlab:edit ita_tutorial"> Click here to start with a Tutorial script''ita_tutorial()''</a>')
+    disp('<a href="matlab:edit ita_tutorial"> Click here to start with a Tutorial script ''ita_tutorial()''</a>')
     ita_disp()
+    disp('<a href="matlab:ita_generate_documentation"> Click here to build the HTML documentation ''ita_generate_documentation()''</a>')
 end
 ita_disp()
 

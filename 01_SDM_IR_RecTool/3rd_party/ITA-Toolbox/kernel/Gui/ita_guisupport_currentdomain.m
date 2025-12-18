@@ -16,20 +16,11 @@ function varargout = ita_guisupport_currentdomain(varargin)
 % Author: Roman Scharrer -- Email: rsc@akustik.rwth-aachen.de
 % Created:  20-Jun-2009 
 
-%% Get ITA Toolbox preferences and Function String
-verboseMode  = ita_preferences('verboseMode');  %#ok<NASGU> Use to show additional information for the user
-thisFuncStr  = [upper(mfilename) ':'];     %#ok<NASGU> Use to show warnings or infos in this functions
-
 %% Initialization and Input Parsing
-error(nargchk(0,1,nargin,'string'));
-
-%persistent ita_gui_current_domain;
+narginchk(0,1); 
 
 figuredomain = getappdata(gcf,'ita_domain');
 
-if isempty(figuredomain)
-    %figuredomain = ita_gui_current_domain;
-end
 
 if nargin > 0
 %     ita_gui_current_domain = varargin{1};

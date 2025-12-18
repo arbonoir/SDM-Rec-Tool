@@ -4,6 +4,11 @@
 % Autor: Martin Pollow <mpo@akustik.rwth-aachen.de>
 % 19.7.2009
 
+% jri 17.07.15: Added horizontal polar coordinate system as defined in "Localization cues of sound sources in the upper hemisphere."
+% Morimoto, Masayuki Aokata, Hitoshi 1984
+% this assumes that the ears are on the y axis and gives lateral angle
+% (alpha) and polar angle (beta)
+
 % <ITA-Toolbox>
 % This file is part of the ITA-Toolbox. Some rights reserved.
 % You can find the license for this m-file in the license.txt file in the ITA-Toolbox folder.
@@ -12,7 +17,7 @@
 classdef itaCoordinates
     properties(Access=private)
         mCoord = [NaN NaN NaN];          % [nPoints 3]
-        mCoordSystem = 'cart';           % 'cart' | 'sph' |'cyl'
+        mCoordSystem = 'cart';           % 'cart' | 'sph' |'cyl'|'pol'
         mWeights = [];
     end
     
@@ -24,9 +29,14 @@ classdef itaCoordinates
         % supported coordinate systems:
         cart; x; y; z
         sph; r; theta; phi
-        cyl; rho % using phi and z also     
+        cyl; rho % using phi and z also   
         % and in degree angles:
         theta_deg; phi_deg;
+        
+        pol; alpha; beta % shares r
+        % and in degree angles:
+        alpha_deg; beta_deg;
+        
         
         nPoints    % number of points in stored here
         azimuth; elevation
@@ -56,7 +66,7 @@ classdef itaCoordinates
                 elseif isstruct(varargin{1})
                     %% struct input/convert
                     fieldName = fieldnames(varargin{1});
-                    for ind = 1:numel(fieldName);
+                    for ind = 1:numel(fieldName)
                         try
                             this.(fieldName{ind}) = varargin{1}.(fieldName{ind});
                         catch errmsg
@@ -92,8 +102,17 @@ classdef itaCoordinates
         % replaces subsref
         function this = n(this,index)
             % error check: do nothing, if out of bound or nothing given
-            if nargin < 2 || isempty(this.mCoord), return; end;
+            if nargin < 2 || isempty(this.mCoord), return; end
             this.mCoord = this.mCoord(index,:);
+            if numel(this.weights) > 0
+                if numel(this.weights) < max(index)
+                    this.weights = []; %pdi: bugfix
+                else
+                    % the weights are set
+                    this.weights = this.weights(index);
+                end
+            end
+
         end
         
         function this = set.mCoord(this, value)
@@ -105,7 +124,7 @@ classdef itaCoordinates
         end
         function this = set.mCoordSystem(this, value)
             isSingleString = ischar(value);
-            if isSingleString && ismember(value, {'cart','sph','cyl'})
+            if isSingleString && ismember(value, {'cart','sph','cyl','pol'})
                 this.mCoordSystem = value;
             else
                 error([mfilename('class') '  invalid string for coordinate system']);
@@ -125,7 +144,13 @@ classdef itaCoordinates
             this = makeCart(this);
             value = this.mCoord;
         end
-        function value = get.r(this), value = this.sph(:,1); end
+        function value = get.r(this)
+            if this.isPol
+                value = this.pol(:,1); 
+            else
+                value = this.sph(:,1);
+            end
+        end
         function value = get.theta(this), value = this.sph(:,2); end
         function value = get.phi(this)
             if this.isCyl
@@ -151,7 +176,18 @@ classdef itaCoordinates
             this = makeCyl(this);
             value = this.mCoord;
         end
-         
+        
+        % pol
+        function value = get.alpha(this), value = this.pol(:,2); end
+        function value = get.beta(this), value = this.pol(:,3); end
+        function value = get.alpha_deg(this), value = rad2deg(this.pol(:,2)); end
+        function value = get.beta_deg(this), value = rad2deg(this.pol(:,3)); end
+        
+        function value = get.pol(this)
+           this = makePol(this);
+           value = this.mCoord;
+        end
+        
         function this = set.x(this, value), this.cart(:,1) = value; end
         function this = set.y(this, value), this.cart(:,2) = value; end
         function this = set.z(this, value)
@@ -167,7 +203,13 @@ classdef itaCoordinates
             this.mCoordSystem = 'cart';
         end
         
-        function this = set.r(this, value), this.sph(:,1) = value; end
+        function this = set.r(this, value)
+            if this.isPol
+                this.pol(:,1) = value;
+            else
+                this.sph(:,1) = value;
+            end
+        end
         function this = set.theta(this, value), this.sph(:,2) = value; end
         function this = set.phi(this, value)
             if this.isCyl
@@ -184,6 +226,19 @@ classdef itaCoordinates
                 this.sph(:,3) = pi/180 * value;
             end
         end
+        
+        %pol
+        function this = set.alpha(this, value), this.pol(:,2) = value; end
+        function this = set.beta(this, value), this.pol(:,3) = value; end
+        function this = set.alpha_deg(this, value), this.pol(:,2) = deg2rad(value); end
+        function this = set.beta_deg(this, value), this.pol(:,3) = deg2rad(value); end
+        
+        function this = set.pol(this,value)
+           this = makePol(this);
+           this.mCoord = value;
+           this.mCoordSystem = 'pol';
+        end
+        
         function this = set.sph(this, value)
             this = makeSph(this);
             this.mCoord = value;
@@ -198,10 +253,19 @@ classdef itaCoordinates
         end
 
         
+        
         function this = set.weights(this, varargin)
             w = varargin{1};
             if numel(w) == 1
                 w = w .* ones(this.nPoints,1);
+            end
+            
+            if isvector(w) && isrow(w)
+                w = w.';
+            end
+
+            if ~isempty(w) && size(w,1) ~= this.nPoints
+                error('Wrong number of weights, either provide a vector with 1 or nPoints entries')
             end
             this = this.set_weights(w);
         end
@@ -214,6 +278,10 @@ classdef itaCoordinates
         end
         function result = isCyl(this)
             result = strcmp(this.mCoordSystem,'cyl');
+        end
+        
+        function result = isPol(this)
+           result = strcmp(this.mCoordSystem,'pol'); 
         end
         
         function result = get.azimuth(this)
@@ -243,19 +311,29 @@ classdef itaCoordinates
                     % do nothing
                 case 'sph'
                     % sph2cart
-                    r = this.mCoord(:,1);
-                    theta = this.mCoord(:,2);
-                    phi = this.mCoord(:,3);
+                    r = this.mCoord(:,1); %#ok<PROP>
+                    theta = this.mCoord(:,2); %#ok<PROP>
+                    phi = this.mCoord(:,3); %#ok<PROP>
                     % apply builtin transformation
-                    [x,y,z] = sph2cart(phi, pi/2 - theta, r);
-                    this.mCoord = [x y z];
+                    [x,y,z] = sph2cart(phi, pi/2 - theta, r); %#ok<PROP>
+                    this.mCoord = [x y z]; %#ok<PROP>
                     this.mCoordSystem = 'cart';
                 case 'cyl'
                     % cyl2cart
-                    rho = this.mCoord(:,1);
-                    phi = this.mCoord(:,2);
-                    [x,y] = pol2cart(phi,rho);
-                    this.mCoord(:,[1 2]) = [x y];
+                    rho = this.mCoord(:,1); %#ok<PROP>
+                    phi = this.mCoord(:,2); %#ok<PROP>
+                    [x,y] = pol2cart(phi,rho); %#ok<PROP>
+                    this.mCoord(:,[1 2]) = [x y]; %#ok<PROP>
+                    this.mCoordSystem = 'cart';
+                case 'pol'
+                    r = this.mCoord(:,1); %#ok<PROP>
+                    alpha = this.mCoord(:,2); %#ok<PROP>
+                    beta = this.mCoord(:,3); %#ok<PROP>
+                    z = r.*sin(alpha).*sin(beta); %#ok<PROP>
+                    rcoselev = r .* cos(beta); %#ok<PROP>
+                    x = rcoselev .* sin(alpha); %#ok<PROP>
+                    y = r.*cos(alpha); %#ok<PROP>
+                    this.mCoord = [x y z]; %#ok<PROP>
                     this.mCoordSystem = 'cart';
                     
                 otherwise
@@ -266,21 +344,24 @@ classdef itaCoordinates
             switch this.mCoordSystem
                 case 'cart'
                     % cart2sph
-                    x = this.mCoord(:,1);
-                    y = this.mCoord(:,2);
-                    z = this.mCoord(:,3);
+                    x = this.mCoord(:,1); %#ok<PROP>
+                    y = this.mCoord(:,2); %#ok<PROP>
+                    z = this.mCoord(:,3); %#ok<PROP>
                     % apply builtin transformation
-                    [phiMod, thetaMod, r] =  cart2sph(x,y,z);
+                    [phiMod, thetaMod, r] =  cart2sph(x,y,z); %#ok<PROP>
                     % phi = 0..2*pi
                     % theta = 0..pi
-                    phi = mod(phiMod, 2*pi);
-                    theta = pi/2 - thetaMod;
-                    this.mCoord = [r theta phi];
+                    phi = mod(phiMod, 2*pi); %#ok<PROP>
+                    theta = pi/2 - thetaMod; %#ok<PROP>
+                    this.mCoord = [r theta phi]; %#ok<PROP>
                     this.mCoordSystem = 'sph';
                 case 'sph'
                     % do nothing
                 case 'cyl'
                     % cyl2sph
+                    this = makeCart(this);
+                    this = makeSph(this);
+                case 'pol'
                     this = makeCart(this);
                     this = makeSph(this);
                     
@@ -292,16 +373,16 @@ classdef itaCoordinates
             switch this.mCoordSystem
                 case 'cart'
                     % cart2cyl
-                    x = this.mCoord(:,1);
-                    y = this.mCoord(:,2);
-                    z = this.mCoord(:,3);
+                    x = this.mCoord(:,1); %#ok<PROP>
+                    y = this.mCoord(:,2); %#ok<PROP>
+                    z = this.mCoord(:,3); %#ok<PROP>
                     
                     % apply builtin transformation
-                    [phiMod, rho] =  cart2pol(x,y);
+                    [phiMod, rho] =  cart2pol(x,y); %#ok<PROP>
                     % phi = 0..2*pi
-                    phi = mod(phiMod, 2*pi);
+                    phi = mod(phiMod, 2*pi); %#ok<PROP>
                     
-                    this.mCoord = [rho phi z];
+                    this.mCoord = [rho phi z]; %#ok<PROP>
                     this.mCoordSystem = 'cyl';
                 case 'sph'
                     % sph2cyl
@@ -309,33 +390,72 @@ classdef itaCoordinates
                     this = makeCyl(this);
                 case 'cyl'
                     % do nothing
+                case 'pol'
+                    this = makeCart(this);
+                    this = makeCyl(this);
                     
                 otherwise
                     error('internal bug of itaCoordinates');
             end
         end
  
-        function this = makeDaff(this)
+%         function this = makeDaff(this)
+%             switch this.mCoordSystem
+%                 case 'cart'
+%                     % cart2daff
+%                     this = makeSph(this);
+%                     this = makeDaff(this);
+%                 case 'sph'
+%                     % sph2daff
+%                     a = 180/pi*this.mCoord(:,3);
+%                     b = 90-180/pi*this.mCoord(:,2);
+%                     r = this.mCoord(:,1);
+%                     this.mCoord = [a b r];
+%                     this.mCoordSystem = 'daff';
+%                 case 'cyl'
+%                     % cyl2daff
+%                     this = makeSph(this);
+%                     this = makeDaff(this);
+%                     
+%                 otherwise
+%                     error('internal bug of itaCoordinates');
+%             end
+%         end
+        
+        function this = makePol(this)
             switch this.mCoordSystem
                 case 'cart'
-                    % cart2daff
-                    this = makeSph(this);
-                    this = makeDaff(this);
+                    % cart2pol
+                    x = this.mCoord(:,1); %#ok<PROP>
+                    y = this.mCoord(:,2); %#ok<PROP>
+                    z = this.mCoord(:,3); %#ok<PROP>
+                    % apply builtin transformation
+                    hypotxy = hypot(x,y); %#ok<PROP>
+                    r = hypot(hypotxy,z); %#ok<PROP>
+                    thetaMod = acos(y./r); %#ok<PROP>
+                    phiMod = atan2(z,x); %#ok<PROP>
+
+                    % phi = 0..2*pi
+                    % theta = 0..pi
+                    alpha = mod(phiMod, 2*pi); %#ok<PROP>
+                    beta = thetaMod; %#ok<PROP>
+                    this.mCoord = [r alpha beta]; %#ok<PROP>
+                    this.mCoordSystem = 'pol';
                 case 'sph'
-                    % sph2daff
-                    a = 180/pi*this.mCoord(:,3);
-                    b = 90-180/pi*this.mCoord(:,2);
-                    r = this.mCoord(:,1);
-                    this.mCoord = [a b r];
-                    this.mCoordSystem = 'daff';
+                    % sph2pol
+                    this = makeCart(this);
+                    this = makePol(this);
                 case 'cyl'
-                    % cyl2daff
-                    this = makeSph(this);
-                    this = makeDaff(this);
+                    % cyl2pol
+                    this = makeCart(this);
+                    this = makePol(this);
+                    
+                case 'pol'
+                    % do nothing
                     
                 otherwise
                     error('internal bug of itaCoordinates');
-            end
+            end    
         end
         
         function result = split(this,index)
@@ -343,18 +463,81 @@ classdef itaCoordinates
         end
         
         function this = merge(varargin)
-            if numel(varargin) == 1 && numel(varargin{1}) == 1 %Only one element
-                this = varargin{1};
+            if numel(varargin) == 1 
+                if numel(varargin{1}) == 1
+                    this = varargin{1};
+                else
+                    % merging multi instance
+                    data = varargin{1};
+                    this = merge(data(1));
+                    data(1) = [];
+                    for idx = 1:numel(data)
+                        input = merge(data(idx));
+                        this.(this.coordSystem) = [this.(this.coordSystem); input.(this.coordSystem)];
+                        %weights can, but must not be provided - handle case
+                        %where one has them and the other does not
+                        if xor(isempty(this.weights),isempty(input.weights))
+                            ita_verbose_info('Only one input has non-empty weights, resulting weight are left empty.',1)
+                            this.weights = [];
+                        else %both either have weights or no weights
+                            this.weights = [this.weights; input.weights];
+                        end
+                    end
+                end
             else
                 this = merge(varargin{1});
                 varargin(1) = [];
                 for idx = 1:numel(varargin)
                     input = merge(varargin{idx});
                     this.(this.coordSystem) = [this.(this.coordSystem); input.(this.coordSystem)];
+                    %weights can, but must not be provided - handle case
+                    %where one has them and the other does not
+                    if xor(isempty(this.weights),isempty(input.weights))
+                        ita_verbose_info('Only one input has non-empty weights, resulting weight are left empty.',1)
+                        this.weights = [];
+                    else %both either have weights or no weights
+                        this.weights = [this.weights; input.weights];
+                    end
                 end
             end
         end
         
+		% Translation in x,y,z
+		% Syntax is itaCoord = itaCoord.translate([x,y,z]) as this is not a handle class
+		function this = translate(this, txyz)
+			if strcmp(this.mCoordSystem, 'cart')
+				transCoords = (makehgtform('translate',txyz) * [this.mCoord, ones(this.nPoints,1)].').';
+			   	this.mCoord = transCoords(:,1:3);
+			else
+				this = makeCart(this);
+				this = translate(this, txyz);
+			end
+		end
+		
+		% Rotation around x,y,z-axis as defined by the Cartesian coordinate system in Matlab
+		% Syntax is itaCoord = itaCoord.rotate([x,y,z]) as this is not a handle class
+		function this = rotate(this, angles)
+			if strcmp(this.mCoordSystem, 'cart')
+				rotCoords = (makehgtform('xrotate',angles(1),'yrotate',angles(2),'zrotate',angles(3)) * [this.mCoord, ones(this.nPoints,1)].').';
+				this.mCoord = rotCoords(:,1:3);
+			else
+				this = makeCart(this);
+				this = rotate(this, angles);
+			end
+		end
+		
+		% Scaling in x,y,z
+		% Syntax is itaCoord = itaCoord.scale([x,y,z]) as this is not a handle class
+		function this = scale(this, sxyz)
+			if strcmp(this.mCoordSystem, 'cart')
+				scaleCoords = (makehgtform('scale',sxyz) * [this.mCoord, ones(this.nPoints,1)].').';
+				this.mCoord = scaleCoords(:,1:3);
+			else
+				this = makeCart(this);
+				this = scale(this, sxyz);
+			end
+
+		end
         
         function this = resize(this,n)
             if n > size(this.mCoord,1)
@@ -406,7 +589,7 @@ classdef itaCoordinates
     
     methods(Static)
         function tutorial
-            edit ita_toolbox_tutorial_itaCoordinates;
+            edit ita_tutorial_itaCoordinates;
         end
         function this = loadobj(sObj)
             % Called when an object is loaded
@@ -423,7 +606,7 @@ classdef itaCoordinates
         
         function revision = classrevision
             % Return last revision on which the class definition has been changed (will be set automatic by svn)
-            rev_str = '$Revision: 11705 $'; % Please dont change this, will be set by svn
+            rev_str = '$Revision: 13301 $'; % Please dont change this, will be set by svn
             revision = str2double(rev_str(isstrprop(rev_str,'digit')));
         end
     end

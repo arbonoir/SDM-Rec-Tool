@@ -18,13 +18,6 @@ pList{idx}.defaultchannels  = 1:3; %default value, could also be empty, otherwis
 pList{idx}.class  = 'itaAudio'; %specify class of objects (default itaSuper, use itaAudio to get only itaAudios)
 
 idx = idx+1;
-pList{idx}.description = 'Denominator spectrum'; %this text will be shown in the GUI
-pList{idx}.helptext    = 'This is the spectrum at the bottow'; %this text should be shown when the mouse moves over the textfield for the description
-pList{idx}.datatype    = 'itaAudioInUse'; %based on this type a different row of elements has to drawn in the GUI
-pList{idx}.default     = ''; %default value, could also be empty, otherwise it has to be of the datatype specified above
-pList{idx}.defaultchannels  = []; %default value, could also be empty, otherwise it has to be of the datatype specified above
-
-idx = idx+1;
 pList{idx}.datatype    = 'line'; %just draw a simple line
 
 %the following two are firstly optional - these are not returning any

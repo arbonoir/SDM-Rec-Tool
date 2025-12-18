@@ -38,7 +38,7 @@ if nargin == 0
     ele = 1;
     pList{ele}.description = 'itaAudio';
     pList{ele}.helptext    = 'The itaAudio to split';
-    pList{ele}.datatype    = 'itaAudioInUse';
+    pList{ele}.datatype    = 'itaAudio';
     pList{ele}.default     = '';
     
     ele = 2;
@@ -63,7 +63,7 @@ end
 
 %% Initialization
 %Inarg checking
-error(nargchk(1,7,nargin));
+narginchk(1,7);
 %find data
 
 sArgs = struct('substring',false,'and',false);

@@ -27,28 +27,26 @@ function ita_legend(legendStrCell, excludeIdx, varargin)
 % Created:  19-Jan-2012 
 
 % TODO:
-% - syntax wie orignal legend? alle optionen weiterleiten
 % - axhandle als option
 % -  check wenn mehr legend einträge als lines
-
-
-%% Initialization and Input Parsing
-% sArgs        = struct('pos1_data','itaAudio', 'opt1', true);
-% [input,sArgs] = ita_parse_arguments(sArgs,varargin); 
 
 %% 
 if ~exist('excludeIdx', 'var')
     excludeIdx = [];
 end
 
-
 cAx = gca;
 
 linHandles  = get(cAx, 'children');
 nLines      = size(linHandles,1);
 
+% % 2014a
+% legendEntryHandle = cell2mat(get(cell2mat(get(linHandles,'Annotation')),'LegendInformation'));
 
-legendEntryHandle = cell2mat(get(cell2mat(get(linHandles,'Annotation')),'LegendInformation'));
+% in 2014b cell2mat doesn't work with new graphics classes          (linHandles.get('Annotation'))
+annotationCell      = get(linHandles,'Annotation');
+legendInfoCell      = get([annotationCell{:}],'LegendInformation');
+legendEntryHandle 	= [legendInfoCell{:}];
 
 set(legendEntryHandle, 'IconDisplayStyle','on');                            % set all on (in case ita_legend is called twice)
 set(legendEntryHandle(nLines-excludeIdx+1), 'IconDisplayStyle','off');  

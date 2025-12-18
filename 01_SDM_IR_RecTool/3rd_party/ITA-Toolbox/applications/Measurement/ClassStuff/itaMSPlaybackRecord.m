@@ -15,6 +15,8 @@ classdef itaMSPlaybackRecord < itaMSRecord
         mExcitation             = [];
         mOutputChannels         = [];
         mOutputMeasurementChain = itaMeasuringStation.loadCurrentOutputMC; %itaMeasurementChain('output');
+        
+        mOutputEqualizationFilters = [];
     end
     
     properties(Dependent = true, Hidden = false, Transient = true)
@@ -25,6 +27,8 @@ classdef itaMSPlaybackRecord < itaMSRecord
     properties(Dependent = true, Hidden = false, Transient = true, AbortSet = true, SetObservable = true) %triggers @this.init !!!
         outputChannels          % Vector specifying the output channel IDs e.g. [1 5]
         outputMeasurementChain  % itaMeasurementChain('output') defining all output measurement chain elements
+        
+        outputEqualizationFilters = []; % these filters are convolved with the excitation signal, but not the compensation
     end
     
     properties(Dependent = true, Hidden = true, Transient = true, AbortSet = true)
@@ -146,6 +150,7 @@ classdef itaMSPlaybackRecord < itaMSRecord
             saveStruct.mOutputamplification = -50;           % Low amplification, to be safe. Will be autoranged later.
             saveStruct.mFreqrange = [1 this.samplingRate/2]; % Full range for calibration.
             saveStruct.applyBandpass = 0;
+            saveStruct.pause = 0;                           % no pause for calibration
             MS = itaMSTF(saveStruct);                     % Init new MSTF object.
         end
         
@@ -215,6 +220,12 @@ classdef itaMSPlaybackRecord < itaMSRecord
             end
             max_rec_lvl = max(abs(result.timeData),[],1);
             
+            % add history line
+            commitID = ita_git_commit_id();
+            if ~isempty(commitID)
+                result = ita_metainfo_add_historyline(result,'Measurement',commitID);
+            end
+            
         end
         
         function [result, max_rec_lvl] = run(this)
@@ -272,7 +283,8 @@ classdef itaMSPlaybackRecord < itaMSRecord
             MS.latencysamples = 0;
             
             [result, max_rec_lvl] = run_raw(MS);
-            result = result * MS.compensation;
+            result = result * MS.compensation / MS.outputamplification_lin;
+            result.signalType = 'energy';
             
             [maxamplitude, lsamples]  = max(abs(result.timeData),[],1);      % Get the measurement's max absolute amplitude and exact sample position of max amplitude for each channel.
             [maxamplitude, idx] = max(maxamplitude); %#ok<ASGLU>
@@ -349,6 +361,10 @@ classdef itaMSPlaybackRecord < itaMSRecord
         %% GET / SET
         % outputamplification
         function set.outputamplification(this,value)
+            set_outputamplification(this,value);
+        end
+        
+        function set_outputamplification(this,value)
             if ischar(value)
                 value = str2num(value(~isstrprop(value,'alpha'))); %#ok<ST2NM>
             end
@@ -387,7 +403,7 @@ classdef itaMSPlaybackRecord < itaMSRecord
                 ita_verbose_info('Leaving outputamplification unchanged',0);
             else
                 outSens = omc.sensitivity('loudspeaker');
-                this.outputamplification = 20*log10(abs(double(value/(this.raw_excitation.rms*outSens))));
+                this.outputamplification = 20*log10(abs(double(value/(max(this.raw_excitation.rms)*outSens))));
             end
         end
         
@@ -444,6 +460,12 @@ classdef itaMSPlaybackRecord < itaMSRecord
         function res = get_final_excitation(this)
             % get the corrected excitation (outputamplification)
             res = this.raw_excitation * this.outputamplification_lin ;
+            
+            % if an outputequalization filter is set, convolve it with the
+            % excitation
+            if ~isempty(this.outputEqualizationFilters)
+                res = res*this.outputEqualizationFilters;
+            end
         end
         
         function set.outputChannels(this,value)
@@ -485,6 +507,12 @@ classdef itaMSPlaybackRecord < itaMSRecord
         
         function set_outputChannels(this,value)
             this.mOutputChannels = value;
+            if ~isempty(this.outputEqualizationFilters)
+                if (this.outputEqualizationFilters.nChannels ~= 1)
+                   this.outputEqualizationFilters = [];
+                   ita_verbose_info('Output Equalization Filter are removed!',0);
+                end
+            end
         end
         
         function res = get.outputChannels(this)
@@ -498,6 +526,29 @@ classdef itaMSPlaybackRecord < itaMSRecord
         function res = get.outputMeasurementChain(this)
             res = this.mOutputMeasurementChain;
         end
+        
+        
+        function set.outputEqualizationFilters(this,value)
+            
+            if isempty(value)
+                this.mOutputEqualizationFilters = value;
+                return
+            end
+            
+            if ~isa(value,'itaAudio')
+                error('Not an itaAudio. Doing nothing');
+            end
+            
+            if value.nChannels ~= 1 & value.nChannels ~= size(this.outputChannels)
+                error('The number of channels of the filter does not fit the number of the output channels');
+            end
+            this.mOutputEqualizationFilters = value;
+        end
+        
+        function res = get.outputEqualizationFilters(this)
+            res = this.mOutputEqualizationFilters;
+        end
+        
         
         %% commandline
         function str = commandline(this)
@@ -545,12 +596,17 @@ classdef itaMSPlaybackRecord < itaMSRecord
             result(3:(2+length(classnameString))) = classnameString;
             disp(result);
             % End Display Start Line
-            
-            commentStr = this.excitation.comment;
-            if length(commentStr) > 10
-                commentStr = [commentStr(1:7) '...'];
+            if ~isempty(this.excitation)
+                commentStr = this.excitation.comment;
+                if length(commentStr) > 10
+                    commentStr = [commentStr(1:7) '...'];
+                else
+                    commentStr = [commentStr, repmat(' ',1,10-length(commentStr))];
+                end
+                trackLength = this.excitation.trackLength;
             else
-                commentStr = [commentStr, repmat(' ',1,10-length(commentStr))];
+                commentStr = 'empty';
+                trackLength = 0;
             end
             
             % Start Display Values
@@ -558,7 +614,7 @@ classdef itaMSPlaybackRecord < itaMSRecord
             oa = repmat(' ',1,7);
             oa_temp = (this.outputamplification);
             oa(1:length(oa_temp)) = oa_temp;
-            disp(['   length     = ' num2str(this.excitation.trackLength,5) ' s '  ' level         = ' oa '      freqRange     = [' num2str(this.freqRange(:)') ']  '])
+            disp(['   length     = ' num2str(trackLength,5) ' s '  ' level         = ' oa '      freqRange     = [' num2str(this.freqRange(:)') ']  '])
             disp(['   averages   = ' num2str(this.averages) '          repeats       = ' num2str(this.repeats) '            latency       = ' num2str(this.latencysamples)])
             disp(['   output ch. = [' num2str(this.outputChannels) ']        input ch.     = [' num2str(this.inputChannels) ']'])
             % End Display Values

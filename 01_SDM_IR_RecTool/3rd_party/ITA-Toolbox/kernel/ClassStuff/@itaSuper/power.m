@@ -6,7 +6,7 @@ function varargout = power(varargin)
 % You can find the license for this m-file in the license.txt file in the ITA-Toolbox folder. 
 % </ITA-Toolbox>
 
-error(nargchk(2,2,nargin));
+narginchk(2,2);
 
 exponent = varargin{2};
 for ind = 1:numel(varargin{1})
@@ -18,7 +18,7 @@ for ind = 1:numel(varargin{1})
         channelUnits{idx} = ita_deal_units(channelUnits{idx},['^' num2str(exponent)]); %TODO
     end
     audioObj.channelUnits = channelUnits;
-    
+    audioObj.channelNames = ita_sprintf('(%s).^%s', audioObj.channelNames, num2str(exponent));
     % Add history line
     varargout{1}(ind) = ita_metainfo_add_historyline(audioObj,'itaSuper.power',{audioObj,num2str(exponent)});
 end

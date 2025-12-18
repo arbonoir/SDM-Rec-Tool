@@ -34,7 +34,7 @@ if nargin == 0
     bands    = ita_preferences('bandsperoctave');
     samplingRate = ita_preferences('samplingRate');
 else
-    error(nargchk(2,10,nargin,'string'));
+    narginchk(2,10);
     if nargin == 1 % only samplingRate or freqVec given
         token  = varargin{1};
         if length(token) == 1 % get global freq limits

@@ -28,7 +28,7 @@ verboseMode  = ita_preferences('verboseMode');  %#ok<NASGU>
 thisFuncStr  = [upper(mfilename) ':'];     %#ok<NASGU>
 
 %% Initialization and Input Parsing
-error(nargchk(1,3,nargin,'string'));
+narginchk(1,3);
 sArgs           = struct('pos1_a','itaSuper','same_channelnames_only',false);
 [result, sArgs] = ita_parse_arguments(sArgs,varargin);
 

@@ -7,8 +7,8 @@ function varargout = ita_generate_gui()
 % Created:  06-Mai-2009
 
 % <ITA-Toolbox>
-% This file is part of the ITA-Toolbox. Some rights reserved. 
-% You can find the license for this m-file in the license.txt file in the ITA-Toolbox folder. 
+% This file is part of the ITA-Toolbox. Some rights reserved.
+% You can find the license for this m-file in the license.txt file in the ITA-Toolbox folder.
 % </ITA-Toolbox>
 
 %%
@@ -24,14 +24,14 @@ h_position = (mpos(1,length(mpos))/2)-(height/2);
 MainPosition = [w_position h_position width height];
 Signal = struct('Type','','Amplitude',1,'Tau',[],'Frequency',1000,'Phi',[],'samplingRate',ita_preferences('samplingRate'),'FFTDegree',ita_preferences('fftDegree'),'OptPhaseInfo',[]);
 
-    hMainFigure = figure( ...       % the main GUI figure
-        'MenuBar','none', ...
-        'Toolbar','none', ...
-        'HandleVisibility','on', ...
-        'Name', 'ITA Generate', ...
-        'NumberTitle','off', ...
-        'Position' , MainPosition, ...
-        'Color', [0.8 0.8 0.8]);
+hMainFigure = figure( ...       % the main GUI figure
+    'MenuBar','none', ...
+    'Toolbar','none', ...
+    'HandleVisibility','on', ...
+    'Name', 'ITA Generate', ...
+    'NumberTitle','off', ...
+    'Position' , MainPosition, ...
+    'Color', [0.8 0.8 0.8]);
 
 figSet.hMainFigure = hMainFigure;
 
@@ -49,7 +49,7 @@ hSignalType = uicontrol(...
     'Position', [10 100 100 30],...
     'HorizontalAlignment','right',...
     'String', [Signal.Type,['|ComplexExp|EmptyDat|Impulse|DiffImp|Sine|Cosine|AMtone|FMtone|Whitenoise|Pinknoise|Flatnoise|'...
-    'Flat|ccxSweep|LinSweep|ExpSweep|complextone']],...
+    'Flat|ccxSweep|swenLinSweep|complextone']],...
     'Style', 'popup',...
     'BackgroundColor', [1 1 1],...
     'Callback', @UpdateSignalType_txt);
@@ -198,8 +198,8 @@ uicontrol(...
     'Style', 'pushbutton',...
     'Callback', @PreviewButtonCallback);
 
-%% ita toolbox logo
-a_im = importdata(which('ita_toolbox_logo.jpg'));
+%% ita toolbox logo with grey background
+a_im = importdata(which('ita_toolbox_logo.png'));
 image(a_im);axis off
 set(gca,'Units','pixel', 'Position', [100 30 350 65]);
 
@@ -274,11 +274,11 @@ end
                 set(hOptPhaseInfo,'Enable','off');
                 set(hTau_bar,'String','Start Frequency');
                 set(hPhi_bar,'String','End Frequency');
-            case {'sweep','linsweep','logsweep','expsweep'}
+            case {'swenlinsweep'}
                 set(hAmplitude,'Enable','off');
                 set(hOptPhaseInfo,'Enable','off');
-                set(hTau_bar,'String','F0');
-                set(hFrequency_bar,'String','F1');
+                set(hTau_bar,'String','Start Frequency');
+                set(hFrequency_bar,'String','End Frequency');
                 set(hPhi_bar,'String','Stop Margin');
             case {'complextone'}
                 set(hTau,'Enable','off');
@@ -321,7 +321,7 @@ end
             end
         end
         if strcmpi(get(hPhi,'Enable'),'on')
-            if isnan(tau)
+            if isnan(phi)
                 empty_field = 1;
             end
         end
@@ -369,25 +369,15 @@ end
             case 'ccxsweep'
                 f_start = tau;
                 f_end = phi;
-                output = ita_generate('ccxsweep',[f_start f_end],sr,fft_deg);
-            case {'sweep','linsweep'}
+                output = ita_generate('ccxsweep',[f_start, f_end],sr,fft_deg);
+            case {'swenlinsweep'}
                 f0 = tau;
                 f1 = freq;
                 stop_margin = phi;
-                if ~isnan(stop_margin)
-                    output = ita_generate('sweep',f0,f1,stop_margin,sr,fft_deg);
-                else
-                    output = ita_generate('sweep',f0,f1,sr,fft_deg);
+                if isnan(stop_margin)
+                    stop_margin = 0;
                 end
-            case {'logsweep','expsweep'}
-                f0 = tau;
-                f1 = freq;
-                stop_margin = phi;
-                if ~isnan(stop_margin)
-                    output = ita_generate('logsweep',f0,f1,stop_margin,sr,fft_deg);
-                else
-                    output = ita_generate('logsweep',f0,f1,sr,fft_deg);
-                end
+                output = ita_generate('swenlinsweep',[f0,f1],stop_margin,sr,fft_deg);
             case 'complextone'
                 if ~isnan(opt_ph_info)
                     output = ita_generate('complextone',a,freq,sr,fft_deg,opt_ph_info);
@@ -396,34 +386,9 @@ end
                 end
             otherwise
                 warndlg('Field left empty! Nothing to be done in here!', 'ita_generate GUI');
-                
-                
-                %                 hFig = figure('Name','Error Window',...
-                %                     'Position',[300 550 250 100],...
-                %                     'MenuBar','none', ...
-                %                     'Toolbar','none', ...
-                %                     'HandleVisibility','on',...
-                %                     'NumberTitle','off', ...
-                %                     'Color', [0.8 0.8 0.8]);
-                %                 uicontrol(...
-                %                     'Parent', hFig,...
-                %                     'Position',[5 40 250 30],...
-                %                     'HorizontalAlignment','center',...
-                %                     'String','Field left empty! Nothing to be done in here!',...
-                %                     'Style', 'text',...
-                %                     'ForegroundColor', [0 0 .7],...
-                %                     'BackgroundColor', [0.8 0.8 0.8]);
-                %                 uicontrol(...
-                %                     'Parent', hFig,...
-                %                     'Position',[90 10 80 30],...
-                %                     'HorizontalAlignment','center',...
-                %                     'String','Ok',...
-                %                     'Style', 'pushbutton',...
-                %                     'BackgroundColor', [0.8 0.8 0.8],...
-                %                     'Callback', @OkButtonCallback);
                 return;
         end
-                
+        
         uiresume(hMainFigure);
         close(hMainFigure)
         return;
@@ -506,24 +471,14 @@ end
                 f_start = tau;
                 f_end = phi;
                 output = ita_generate('ccxsweep',[f_start f_end],sr,fft_deg);
-            case {'sweep','linsweep'}
+            case {'swenlinsweep'}
                 f0 = tau;
                 f1 = freq;
                 stop_margin = phi;
-                if ~isnan(stop_margin)
-                    output = ita_generate('sweep',f0,f1,stop_margin,sr,fft_deg);
-                else
-                    output = ita_generate('sweep',f0,f1,sr,fft_deg);
+                if isnan(stop_margin)
+                    stop_margin = 0;
                 end
-            case {'logsweep','expsweep'}
-                f0 = tau;
-                f1 = freq;
-                stop_margin = phi;
-                if ~isnan(stop_margin)
-                    output = ita_generate('logsweep',f0,f1,stop_margin,sr,fft_deg);
-                else
-                    output = ita_generate('logsweep',f0,f1,sr,fft_deg);
-                end
+                output = ita_generate('swenlinsweep',[f0,f1],stop_margin,sr,fft_deg);
             case 'complextone'
                 if ~isnan(opt_ph_info)
                     output = ita_generate('complextone',a,freq,sr,fft_deg,opt_ph_info);
@@ -563,7 +518,7 @@ end
             end
         end
         if strcmpi(get(hPhi,'Enable'),'on')
-            if isnan(tau)
+            if isnan(phi)
                 empty_field = 1;
             end
         end

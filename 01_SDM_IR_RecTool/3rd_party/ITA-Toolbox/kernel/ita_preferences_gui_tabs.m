@@ -38,7 +38,7 @@ for idx = 1:size(defined_preferences,1)
 end
 
 %% GUI Initialization
-h_textbox    = 22; %height of each line
+h_textbox    = 22; %height of each line - default
 top_margin   = 22+40; %space on top of the ita logo
 %height of the entire gui (with some headroom +1)
 height       = top_margin + (nh+4)*(h_textbox+1); 
@@ -55,7 +55,7 @@ height       = height - 100;
 fontsize     = 10;
 rightMargin  = 720; % where ui elements end
 stPos        = 280; % where the second column starts
-topMargin    = 0;  %space before first line starts
+topMargin    = 10;  %space before first line starts
 popupStart   = stPos;
 popupSpace   = 450; %space to right after dropdown menu - control the popup width
 textSpace    = popupSpace; %space to right after text/double fields - control the width
@@ -97,11 +97,11 @@ for idx=1:nTabs
 end
 warning(xx) %write back old warning settings
 
-%% ita toolbox logo
-a_im = importdata(which('ita_toolbox_logo_lightgrey.jpg'));
+%% ita toolbox logo lightgrey bg
+a_im = importdata(which('ita_toolbox_logo_lightgrey.png'));
 ax    = axes('Parent',hFigure);
 image(a_im);axis off
-set(ax,'Units','pixel', 'Position', [50 20 300 60]*0.8); %pdi new scaling
+set(ax,'Units','pixel', 'Position', [10 20 300 60]*0.8); %pdi new scaling
 
 %% port audio and COMports
 if exist('ita_portaudio_menuStr','file')
@@ -172,6 +172,7 @@ for I = 1:nTabs %go thru all tabs to plot
                         'BackgroundColor',bgColor);
                     pref = ita_preferences(defined_preferences{idx,1});
                     set(h.(defined_preferences{idx,1}),'String',num2str(pref));
+
                 case {'popup_double','popup_string','popup_char'}
                     token = defined_preferences{idx,5};
                     startIdx = strfind(token,'[')+1;endIdx = strfind(token,']')-1;
@@ -224,7 +225,7 @@ for I = 1:nTabs %go thru all tabs to plot
                     end
                     h.(defined_preferences{idx,1}) = uicontrol(...
                         'Parent', tab(tabNo),...
-                        'Position',[popupStart height-topMargin-4-(idx2)*(h_textbox+3) rightMargin-popupSpace h_textbox+8],...
+                        'Position',[popupStart height-topMargin-8-(idx2)*(h_textbox+3) rightMargin-popupSpace h_textbox+8],...
                         'FontSize',fontsize,...
                         'BackgroundColor',[1 1 1],...
                         'HorizontalAlignment','right',...
@@ -236,7 +237,7 @@ for I = 1:nTabs %go thru all tabs to plot
                     comportlist = com_DevStr;
                     h.(defined_preferences{idx,1}) = uicontrol(...
                         'Parent', tab(tabNo),...
-                        'Position',[popupStart height-4-(idx2)*(h_textbox+3) rightMargin-popupSpace h_textbox+8],...
+                        'Position',[popupStart height-topMargin-8-(idx2)*(h_textbox+3) rightMargin-popupSpace h_textbox+8],...
                         'FontSize',fontsize,...
                         'HorizontalAlignment','right',...
                         'String',comportlist,...
@@ -255,7 +256,7 @@ for I = 1:nTabs %go thru all tabs to plot
                     end
                     h.(defined_preferences{idx,1}) = uicontrol(...
                         'Parent', tab(tabNo),...
-                        'Position',[popupStart height-topMargin-4-(idx2)*(h_textbox+3) rightMargin-popupSpace h_textbox+8],...
+                        'Position',[popupStart height-topMargin-8-(idx2)*(h_textbox+3) rightMargin-popupSpace h_textbox+8],...
                         'FontSize',fontsize,...
                         'HorizontalAlignment','right',...
                         'String',devicelist,...
@@ -273,6 +274,7 @@ for I = 1:nTabs %go thru all tabs to plot
                         'BackgroundColor',bgColor);
                     pref = ita_preferences(defined_preferences{idx,1});
                     set(h.(defined_preferences{idx,1}),'String',pref);
+
                 case {'password'}
                     h.(defined_preferences{idx,1}) = uicontrol(...
                         'Parent', tab(tabNo), ...
@@ -284,6 +286,7 @@ for I = 1:nTabs %go thru all tabs to plot
                         'BackgroundColor',bgColor);
                     pref = repmat('*',1,40);
                     set(h.(defined_preferences{idx,1}),'String',pref);
+
                 case {'bool','bool_ispc'}
                     if strcmpi(type,'bool_ispc') && ispc || strcmpi(type,'bool')
                         h.(defined_preferences{idx,1}) = uicontrol(...
@@ -303,6 +306,7 @@ for I = 1:nTabs %go thru all tabs to plot
                         idx2 = idx2-1; %pdi: skip this entry and put another gui element instead
                         draw_line = false;
                     end
+                    
                 case {'path'}
                     h.(defined_preferences{idx,1}) = uicontrol(...
                         'Parent', tab(tabNo), ...

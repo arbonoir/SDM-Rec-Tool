@@ -28,9 +28,9 @@ function ita_errorlog_show(varargin)
 % Created:  09-Oct-2009
 
 %% Initialization and Input Parsing
-error(nargchk(1,1,nargin,'string'));
+narginchk(1,1);
 sArgs        = struct('pos1_data','itaSuper');
-[data,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[data,sArgs] = ita_parse_arguments(sArgs,varargin);
 
 %% +++Body - Your Code here+++ 'result' is an audioObj and is given back
 if ~isempty(data.errorLog)

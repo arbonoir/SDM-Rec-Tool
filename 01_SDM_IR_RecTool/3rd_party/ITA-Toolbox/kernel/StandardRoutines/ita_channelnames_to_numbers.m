@@ -30,7 +30,7 @@ function varargout = ita_channelnames_to_numbers(varargin)
 
 %% Initialization
 % Number of Input Arguments
-error(nargchk(2,8,nargin,'string'));
+narginchk(2,8);
 % Find Audio Data
 data = varargin{1};
 

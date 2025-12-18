@@ -27,13 +27,29 @@ classdef itaMeasurementTasksScan < itaMeasurementTasks
         ContinuousMeasurement = 0; % true for continuous measurements
         % jck: added for Slayer room measurements
         SeparateMeasurement = 0; % true for continuous measurements
+        
     end
+    
+    properties(Dependent = true)
+        % postProcessing functions of type ao = function(ao)
+        % gets the latest measurement as an itaAudio.
+        % any changes are passed back and saved
+        % please be carefull, as the raw measurement is not saved
+        % only use for things that MUST happen during measurement 
+        % (e.g. temperature readout)
+        % anything that can happen after the measurement task can wait
+        postProcessingFunctions; % this expects a cell of function pointers
+        postMovementFunctions;    % function called
+    end
+    
     properties (Hidden = false, SetObservable = true, AbortSet = true)
             measurementPositions = itaCoordinates(); %itaCoordinates Obj with measurement positions to be measured
     end
     properties (Hidden = true)
         mLastMeasurement = 0; %ID of last measurement
         mCurrentPosition = cart2sph(itaCoordinates(1)); % itaCoordinates
+        mPostProcessingFunctions = {};
+        mPostMovementFunctions = {};
     end
     % *********************************************************************
     % *********************************************************************
@@ -70,21 +86,40 @@ classdef itaMeasurementTasksScan < itaMeasurementTasks
                 this.moveTo(this.measurementPositions.n(1));
             end
             posStarted  = this.mLastMeasurement;
-            timeStarted = now;
-            
+            timeStarted = datetime('now');
+            time_finished = 0;
             if ~isdir(this.dataPath)    %maku 14.07.2010
                 mkdir(this.dataPath);   %makes shure that it works after a user's this.reset without calling this.init
             end
             if ~isdir(this.finalDataPath)
                 mkdir(this.finalDataPath);
             end
-            
+
             while this.mLastMeasurement < this.measurementPositions.nPoints
                 %% do the measurement
                 if this.ContinuousMeasurement
                     result = this.runContinuousMeasurement;
                 else
-                    result = this.runMeasurement;
+                    [result, max_rec_lvl] = this.runMeasurement;
+                end
+              
+                %% postprocessingsteps
+                % this is added to allow some execution after each
+                % measurement
+                if ~isempty(this.mPostProcessingFunctions)
+                    metadata.max_rec_lvl = max_rec_lvl;
+                    metadata.time_finished = time_finished;
+                    metadata.measurementNumber = this.mLastMeasurement;
+                    for ppIndex = 1:length(this.mPostProcessingFunctions)
+                        try
+                            result = this.mPostProcessingFunctions{ppIndex}(this,result,metadata);
+                        catch e
+                            ita_verbose_info('Error during postProcessingFunction',0);
+                            disp(e)
+                            disp(e.message)
+                        end
+                    end 
+                    
                 end
                 
                 %% write data
@@ -99,24 +134,25 @@ classdef itaMeasurementTasksScan < itaMeasurementTasks
                 movefile(filename,filename_final); %speed reasons - pdi
                 
                 %% time remaining
-                time_elapsed = (now - timeStarted)*24*60*60;
+                time_elapsed = datetime('now') - timeStarted;
                 time_remaining = (this.measurementPositions.nPoints - this.mLastMeasurement) * time_elapsed / max(this.mLastMeasurement - posStarted - 0.5,1);
-                time_finished = now + time_remaining/60/60/24;
+                time_finished = datetime('now');
+                time_finished = time_finished + time_remaining;
                 if this.ContinuousMeasurement
-                    disp([int2str(this.mLastMeasurement/2) ' of ' int2str(this.measurementPositions.nPoints/2) ' done. ' num2str(time_elapsed/60,4) 'minutes elapsed, ' num2str(time_remaining/60,4) 'minutes left. Time of completion: ' datestr(time_finished)]);
+                    fprintf('%i of %i done. Done at: %s (in %s). Time Elapsed: %s \n', this.mLastMeasurement, this.measurementPositions.nPoints, datestr(time_finished), char(time_remaining,'dd:hh:mm:ss'), char(time_elapsed,'dd:hh:mm:ss'));
                 else
-                    disp([int2str(this.mLastMeasurement) ' of ' int2str(this.measurementPositions.nPoints) ' done. ' num2str(time_elapsed/60,4) 'minutes elapsed, ' num2str(time_remaining/60,4) 'minutes left. Time of completion: ' datestr(time_finished)]);
+                    fprintf('%i of %i done. Done at: %s (in %s). Time Elapsed: %s \n', this.mLastMeasurement, this.measurementPositions.nPoints, datestr(time_finished), char(time_remaining,'dd:hh:mm:ss'), char(time_elapsed,'dd:hh:mm:ss'));
                 end
 %                 if ~isempty(this.diaryFile) % jck: file becomes too large! Clipping can be found in errorLog
 %                     diary off;
 %                     diary([this.dataPath filesep this.diaryFile ]); %pdi changed to dataPath folder
 %                 end
             end
-            ita_verbose_info([num2str((now - timeStarted)*24) ' hours later...'],0);
+%             ita_verbose_info([num2str((now - timeStarted)*24) ' hours later...'],0);
 %             diary off; % jck: see comment above
         end
         
-        function result = runMeasurement(this,measurementNo)
+        function [result, max_rec_lvl] = runMeasurement(this,measurementNo)
             %run a single measurement, e.g. the result seems broken...
             % MS.runMeasurement(measurementNodeNumber)
             this.measurementSetup.reset = false;
@@ -133,15 +169,37 @@ classdef itaMeasurementTasksScan < itaMeasurementTasks
             % Go to position
             this.moveTo(this.measurementPositions.n(measurementNo));
             
+            % Call Post movement function 
+            % this can be used to implement special behavour only every nth
+            % move or only when arm moves
+            if ~isempty(this.mPostMovementFunctions)
+                if measurementNo > 1
+                    metadata.lastPosition = this.measurementPositions.n(measurementNo-1);
+                else
+                    metadata.lastPosition = this.measurementPositions.n(measurementNo);
+                end
+                metadata.currentPosition = this.measurementPositions.n(measurementNo);
+                metadata.measurementNumber = this.mLastMeasurement;
+                for ppIndex = 1:length(this.mPostMovementFunctions)
+                    try
+                        this.mPostMovementFunctions{ppIndex}(this,metadata);
+                    catch e
+                        ita_verbose_info('Error during postMovementFunctions',0);
+                        disp(e)
+                        disp(e.message)
+                    end
+                end
+            end
+
             % wait some time?
             pause(this.waitBeforeMeasurement);
             
             % Run measurement
             % jck: added for Slayer room measurements
             if this.SeparateMeasurement
-                result = this.measurementSetup.run_separate('crop',false);
+                [result,max_rec_lvl] = this.measurementSetup.run_separate('crop',false);
             else
-                result = this.measurementSetup.run;
+                [result, max_rec_lvl] = this.measurementSetup.run;
             end
             
             % set channelCoordinates
@@ -181,7 +239,7 @@ classdef itaMeasurementTasksScan < itaMeasurementTasks
                 this.measurementSetup.final_excitation;
                 this.measurementSetup.final_compensation;
             end
-            
+
             % wait some time?
             pause(this.waitBeforeMeasurement);
             
@@ -201,6 +259,27 @@ classdef itaMeasurementTasksScan < itaMeasurementTasks
             
         end
         
+        function this = set.postProcessingFunctions(this,value)
+            ita_verbose_info('Warning: postProcessingFunctions set.',0);
+            ita_verbose_info('Note that this can slow down the measurement.',0);
+            ita_verbose_info('Everything that can be done after the measurement should not be done here.',0);
+            this.mPostProcessingFunctions = value;
+        end
+        
+        function result = get.postProcessingFunctions(this)
+           result = this.mPostProcessingFunctions;
+        end
+        
+        function this = set.postMovementFunctions(this,value)
+            ita_verbose_info('Warning: postMovementFunctions set.',0);
+            ita_verbose_info('Note that this can slow down the measurement.',0);
+            this.mPostMovementFunctions = value;
+        end
+
+        function result = get.postMovementFunctions(this)
+            result = this.postMovementFunctions;
+        end
+
 %         function this = sort_measurement_positions(this)    
 %             ita_verbose_info('Oh Lord, this function is (more or less) abstract and therefore I will do NOTHING!.', 1);
 %             % sort measurement positions

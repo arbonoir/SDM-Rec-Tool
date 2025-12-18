@@ -22,7 +22,7 @@ function varargout = ita_toolbox_path(varargin)
 % Created:  18-Jun-2009
 
 %% Initialization and Input Parsing
-error(nargchk(0,1,nargin,'string'));
+narginchk(0,1);
 
 %% path
 if nargin == 0

@@ -25,7 +25,7 @@ function varargout = ita_coherence(varargin)
 
 %% Initialization
 % Number of Input Arguments
-%error(nargchk(1,9,nargin,'string'));
+%narginchk(1,9);
 % Find Audio Data
 TwoInMode = false;
 sArgs = struct('pos1_data1','itaAudioTime','blocksize',1024,'combinations',[],'use_power_of_2',false,'fftsize',[],'nsegments',[],'complex',false);

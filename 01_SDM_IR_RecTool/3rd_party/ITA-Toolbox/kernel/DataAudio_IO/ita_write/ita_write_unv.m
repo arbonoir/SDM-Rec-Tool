@@ -41,7 +41,7 @@ end
 %% Get ITA Toolbox preferences and Function String
 thisFuncStr  = [upper(mfilename) ':'];     % Use to show warnings or infos in this functions
 
-error(nargchk(2,6,nargin,'string'));
+narginchk(2,6);
 sArgs        = struct('pos1_data','anything','pos2_unvFilename','string','type',58,'action','replace');
 [data,unvFilename,sArgs] = ita_parse_arguments(sArgs,varargin); 
 

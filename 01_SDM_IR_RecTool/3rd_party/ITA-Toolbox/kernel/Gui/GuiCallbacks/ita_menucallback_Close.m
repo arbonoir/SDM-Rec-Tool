@@ -5,5 +5,5 @@ function ita_menucallback_Close(hObject, eventdata)
 % You can find the license for this m-file in the license.txt file in the ITA-Toolbox folder. 
 % </ITA-Toolbox>
 
-close(ita_main_window);
+close(ita_guisupport_getParentFigure(hObject));
 end

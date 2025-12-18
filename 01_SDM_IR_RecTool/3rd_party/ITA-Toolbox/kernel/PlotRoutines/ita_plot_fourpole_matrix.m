@@ -27,7 +27,7 @@ verboseMode  = ita_preferences('verboseMode');  %#ok<NASGU>
 thisFuncStr  = [upper(mfilename) ':'];     %#ok<NASGU>
 
 %% Initialization
-error(nargchk(1,1,nargin));
+narginchk(1,1);
 if isa(fp,'itaFourpole')
     data = fp.data;
     spk12 = data(1,2);

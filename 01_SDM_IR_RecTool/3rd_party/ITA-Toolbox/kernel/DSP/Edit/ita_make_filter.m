@@ -39,7 +39,7 @@ function varargout = ita_make_filter(varargin)
 %% Initialization
 FFT_DEGREE_FILTER = 14; %used to get an impulse for time domain filtering
 
-error(nargchk(2,20,nargin,'string'));
+narginchk(2,20);
 filt_vec   = varargin{1};
 if (nargin >= 3) && ~ischar(varargin{3}) %samples and rate are given
     sr       = varargin{2};

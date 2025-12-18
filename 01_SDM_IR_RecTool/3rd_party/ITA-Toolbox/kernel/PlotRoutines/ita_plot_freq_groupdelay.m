@@ -47,7 +47,7 @@ matlabdefaults = ita_set_plot_preferences; %#ok<NASGU> %set ita toolbox preferen
 
 %% Initialization
 sArgs = struct('pos1_data','itaSuper','nodb',true,'unwrap',false,'figure_handle',[],'axes_handle',[],'linfreq','off','linewidth',ita_preferences('linewidth'),'fontname',ita_preferences('fontname'), 'xlim',[],'ylim',[],'axis',[],'aspectratio',[],'hold','off','precise',true,'ylog',false,'normalize',false);
-[data sArgs] = ita_parse_arguments(sArgs, varargin); 
+[data, sArgs] = ita_parse_arguments(sArgs, varargin); 
 
 if numel(data) > 1
     ita_verbose_info([thisFuncStr 'There is more than one instance stored in that object. Plotting the first one only.'],0);
@@ -71,14 +71,14 @@ if ~isempty(sArgs.figure_handle) && ishandle(sArgs.figure_handle)
 else
     fgh = ita_plottools_figure;
 end
-
+setappdata(fgh,'ita_domain', 'frequency and group delay'); 
 
 %% Plotting of Modulus
 if isempty(sArgs.axes_handle) || ~ishandle(sArgs.axes_handle(1))
     axh1 = subplot(2,1,1);
 else
     axh1 = sArgs.axes_handle(1);
-    axes(sArgs.axes_handle(1)); %#ok<MAXES>
+    axes(sArgs.axes_handle(1)); 
 end
 
 [fgh,axh1] = ita_plot_freq(varargin{:},'figure_handle',fgh,'axes_handle',axh1);
@@ -89,7 +89,7 @@ if isempty(sArgs.axes_handle) || ~ishandle(sArgs.axes_handle(2))
     axh2 = subplot(2,1,2);
 else
     axh2 = sArgs.axes_handle(2);
-    axes(axh2); %#ok<MAXES>
+    axes(axh2); 
     if ~sArgs.hold
         hold off;
     else
@@ -105,12 +105,15 @@ linkaxes([axh1 axh2],'x');
 
 setappdata(fgh,'AxisHandles',[axh1 axh2]);
 setappdata(fgh,'ActiveAxis',axh1);
+setappdata(fgh,'ita_domain', 'frequency and group delay');
 
 %% Make first axis current
-axes(axh1);  %#ok<MAXES>
+axes(axh1);  
 
 %% Return the figure handle
 if nargout == 1
+    varargout{1} = {fgh};
+elseif nargout == 2
     varargout{1} = {fgh};
     varargout{2} = [axh1 axh2];
 end

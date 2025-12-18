@@ -27,17 +27,19 @@ function varargout = ita_guisupport_getworkspacelist(varargin)
 % Created:  19-Jun-2009
 
 %% Initialization and Input Parsing
-error(nargchk(0,2,nargin,'string'));
+narginchk(0,2);
 sArgs        = struct('class','itaSuper');
 [sArgs] = ita_parse_arguments(sArgs,varargin);
 
 %% Get Variable List
 list_of_var = evalin('base','whos'); % list of workspace variables
-if numel(list_of_var) == 0 % this is a clear workspace, get some data
-    ita_load_default_variables;
-    list_of_var = evalin('base','whos'); % list of workspace variables
+% jri: why are we cluttering up the workspace with stuff?
+% only takes time
+%if numel(list_of_var) == 0 % this is a clear workspace, get some data
+%    ita_load_default_variables;
+%    list_of_var = evalin('base','whos'); % list of workspace variables
     
-end
+%end
 
 list        = '';
 celllist    = {};
@@ -65,13 +67,6 @@ for idx  = 1:numel(list_of_var)
     end
 end
 result = list(1:end-1);
-
-%% Add  -- All --
-result = [result '|-- All --'];
-returnlist{end+1}.name = '-- All --';
-celllist{end+1,1} = '-- All --';
-celllist{end,2} = '-- All --';
-
 
 %% Find output parameters
 if nargout == 0 %User has not specified a variable

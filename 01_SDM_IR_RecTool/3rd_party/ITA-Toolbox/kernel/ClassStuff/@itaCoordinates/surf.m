@@ -1,4 +1,4 @@
-function varargout = surf(this, varargin)
+function varargout = surf(this, data, varargin)
 
 % <ITA-Toolbox>
 % This file is part of the ITA-Toolbox. Some rights reserved. 
@@ -6,12 +6,13 @@ function varargout = surf(this, varargin)
 % </ITA-Toolbox>
 
 
-% This function plots the surface of a itaCoordinates object c (or of one of
-% its children). Optionally the radius information r can be given explicitly.
+% This function plots the surface of an itaCoordinates object c (or of one of
+% its children). The second input 'data' determines the surface's colour
+% scheme. This could be for example the radius data.  
 % If the radius information is complex, it is regarded as a complex plot,
 % and the color is used to denote the phases.
 %
-% The plop parameter can be used for a upper limit of how much crazy
+% The plop parameter (see options) can be used for a upper limit of how much crazy
 % shaped triangulas will exist. A plop of 1 means only plot faces
 % that have smaller deformation as average. A factor of 4 makes sense for
 % most plots. Default is without plop (runs faster).
@@ -19,95 +20,96 @@ function varargout = surf(this, varargin)
 % All properties of the MATLAB built-in "Patch Properties" can be used.
 %
 % Syntax:
-%       surf(c)
+%       surf(c, data)
 %           plots the itaCoordinate object c
-%       surf(c,r)
-%           plots the radius r onto c
-%       surf(c,r,color)
-%           give the color explicitly
-%       surf(c,1,color)
-%           plots color data on the unit sphere
+%       surf(c, data, options)
+%           certain options (see below) can be set
 %       surf(c,r,color,'plop', 1, [optional parameter of built-in surf])
 %           opens the large triangles
-%       surf(c,ao,f)
-%           plots balloon of itaAudio object ao at frequency f
-%
 %           (other parameters are passed to the built-in surf function)
-%
-%
+
+% Options (default):
+%       'radius'    []      - sphere's radius
+%       'magnitude' (false)   - takes absolute value of data 
+%       'parent'    []
+%       'complex' (false)   - indicates if data is complex
+%       'colorbar'  (true)  - use colorbar scale
+%       'plop'      [] - regulation of triangle shapes 
+%       'hull'      [] - regulates shape's hull
+%             
 % Author:
 %   Martin Pollow, mpo@akustik.rwth-aachen.de, 4.1.2010
 
-error(nargchk(1,inf,nargin,'struct'));
+sArgs             = struct('pos1_data','double', ...
+                           'radius', [], ...
+                           'magnitude', 0, ... 
+                           'parent', [], ...
+                           'complex', false, ...
+                           'colorbar', true,...
+                           'plop', [],...
+                           'hull', []);
 
-defaultProperties = {'EdgeAlpha',0.1, 'FaceColor', 'interp'};
+[data,sArgs] = ita_parse_arguments(sArgs, [data, varargin]); 
 
+if sArgs.magnitude
+    data = abs(data);
+end
 
-%% now set r and color according to the input variables
+%% now set radius and color according to the input variables
+% set radius
+if ~isempty(sArgs.radius)
+    r = sArgs.radius;
+else
+    r = data.';
+end
 
-% there is three options for the colorbar settings:
-%   geometry / complex / magnitude
-
-if nargin == 1 || (nargin > 1 && ischar(varargin{1}))
-    % only coordinates given
-    r = this.r;
-    color = zeros(size(r));
-    colorbar_settings = 'geometry';    
-elseif nargin > 1 && isnumeric(varargin{1})
-    % also a radius is given
-    r = varargin{1}(:);
-    isComplex = ~all(isreal(r));% & min(r(:)) < 0;
-    if isComplex
+% set colour - there are three options for the colorbar settings:
+% geometry / complex / magnitude
+isComplex = ~all(isreal(r)) || sArgs.complex;
+if isComplex
+    if sArgs.complex && ~isempty(sArgs.radius)
+        color = mod(data,2*pi);
+    else
         % if the radius is complex, set the color
         color = mod(angle(r),2*pi);
-        colorbar_settings = 'complex';
-    else
-        % if it is real, use the magnitude as color
-        color = r;
-%         ita_verbose_info('itaCoordinates.surf is plotting negative radius, take care',0);
-        colorbar_settings = 'magnitude';
     end
-    r = abs(r);
-    
-    if nargin > 2 && isnumeric(varargin{2})
-        % if a color is given explicitly
-        % negative radii are set to 0
-        if sum(abs(imag(r))) > 0, ita_verbose_info('ignoring imaginary part of radius'); end
-        r = max(real(r),0);
-        color = varargin{2}.';
-        % use the magnitude of complex data
-        if ~all(isreal(color))
-            color = abs(color);
-        end        
-        
-        colorbar_settings = 'magnitude';
-        % set varargin for the built-in function
-        varargin = varargin(3:end);
-    else
-        varargin = varargin(2:end);
+    colorbar_settings = 'complex';
+else
+    % if it is real, use the magnitude as color
+    color = r;
+    %         ita_verbose_info('itaCoordinates.surf is plotting negative radius, take care',0);
+    colorbar_settings = 'magnitude';
+end
+r = abs(r);
+
+if ~isempty(sArgs.radius) && ~sArgs.complex
+    % if a color is given explicitly
+    % negative radii are set to 0
+    if sum(abs(imag(r))) > 0, ita_verbose_info('ignoring imaginary part of radius'); end
+    r = max(real(r),0);
+    color = data.';
+    % use the magnitude of complex data
+    if ~all(isreal(color))
+        color = abs(color);
     end
-elseif nargin > 2 && isa(varargin{1},'itaSuper')
-    varargout{1} = surf(this, varargin{1}.freq2value(varargin{2}), varargin{3:end});
-    title([' f = ' num2str(varargin{2}) 'Hz '])
-    if ~nargout, varargout = {}; end
-    return;
+
+    colorbar_settings = 'magnitude';
 end
 
 % define how big the patches can get
-if numel(varargin) && strcmpi(varargin{1},'plop')
-    maxAreaVertex = varargin{2};
-    varargin = varargin(3:end);
+if ~isempty(sArgs.plop) 
+    maxAreaVertex = sArgs.plop;
 else
     maxAreaVertex = 0;
 end
 
-% set a hull if no is explicitly given
-if numel(varargin) && strcmpi(varargin{1},'hull')
-    hull = varargin{2};
+
+% set a hull 
+if ~isempty(sArgs.hull) 
+    hull = sArgs.hull;
     if any(size(hull,2) ~= 3)
         error('something wrong with the hull in itaCoordinates.surf');
     end
-    varargin = varargin(3:end);
 else
     % use unity radius to create triangularisation
     this.r = 1;
@@ -153,7 +155,11 @@ if maxAreaVertex > 0
 end
 
 % plot the surface
-hFig = trisurf(hull, this.x, this.y, this.z);
+if sArgs.parent ~= 0
+    hFig = trisurf(hull, this.x, this.y, this.z,'Parent',sArgs.parent);
+else
+    hFig = trisurf(hull, this.x, this.y, this.z);   
+end
 % jri: matlab 2014b interpolation changed: interpolation between cvalues
 % leads to breaks in plot: set rgbValues only in complex plots
 if (strcmp(colorbar_settings,'complex'))
@@ -162,25 +168,26 @@ if (strcmp(colorbar_settings,'complex'))
 else
     set(hFig, 'FaceVertexCData', color(:));
 end
-% set(gca,'DrawMode','fast'); % this avoids a MATLAB segfault (?? only for renderer painters)
-set(hFig, defaultProperties{:});
-if numel(varargin)
-    set(hFig, varargin{:});
-end
+set(gca,'SortMethod','depth'); % replaced set(gca,'DrawMode','fast'); % this avoids a MATLAB segfault (?? only for renderer painters)
+set(hFig);
 
 switch colorbar_settings
     case 'geometry'
         % do nothing
     case 'complex'
-        colormap hsv
-        colorbar;
+        colormap(hsv)
+        if sArgs.colorbar
+            colorbar;
+        end
         caxis([0 2*pi]);
     case 'magnitude'
         colormap jet
 %         caxis([0 max(color)]);
         if min(color) < max(color)
             caxis([min(color) max(color)]);
-            colorbar;
+            if sArgs.colorbar
+                colorbar;
+            end
         elseif all(isfinite(color))
             caxis([0 max(color)]);
         else
@@ -203,10 +210,10 @@ end
 
 function rgbValues = mapCDataToRGB(cdata)
     map = colormap(hsv);
-    cmin = min(cdata);
-    cmax = max(cdata);
+    cmin = 0;
+    cmax = 2*pi;
     cm_length = length(map);
-    % use the same interpolation as the original surf
+    % use the same interpolation as the original surf (scaled mapping)
     % http://de.mathworks.com/help/matlab/visualize/coloring-mesh-and-surface-plots.html?nocookie=true
     colormap_index = fix((cdata-cmin)/(cmax-cmin)*cm_length)+1;
     rgbValues = ind2rgb(colormap_index,map);

@@ -108,9 +108,9 @@ if is_os('WIN')
     set(handles.platform_sdk_directory_text,'Enable','on');
     set(handles.case_insensitive_checkbox,'Enable','on');
 elseif is_os('MAC')
-    api_asio = 1;
+    api_asio = 0;
     api_coreaudio = 1;
-    api_jack = 1;
+    api_jack = 0;
     
     set(handles.platform_sdk_path_textbox,'Enable','off');
     set(handles.platform_sdk_browse_button,'Enable','off');

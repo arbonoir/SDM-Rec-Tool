@@ -39,7 +39,7 @@ sArgs         = struct('pos1_data','itaAudio',  'bandsPerOctave', ita_preference
 
 %%
 
-[input timeShifted] = ita_time_shift(input, '20dB');
+[input, timeShifted] = ita_time_shift(input, '20dB');
 
 % cut samples from cyclic shift to avoid error in noise estimation
 nSamples2cut   = -timeShifted*input.samplingRate + rem(-timeShifted*input.samplingRate,2); % always cut even number
@@ -77,7 +77,7 @@ else
     rawTimeData         = input.timeData.^2;
 end
 
-[nSamples nChannels]= size(rawTimeData);
+[nSamples, nChannels]= size(rawTimeData);
 nSamples            = nSamples - nSamples2cut;
 [ revT, noiseLevel, intersectionTime, noisePeakLevel]   = deal(nan(nChannels,1));
 
@@ -115,7 +115,7 @@ for iChannel = 1:nChannels
     
     % 3) regression
 
-    [del startIdx] = max(timeWinData);
+    [del, startIdx] = max(timeWinData);
     stopIdx = find(10*log10(timeWinData(startIdx+1:end)) > 10*log10(noiseEst)+ dbAboveNoise, 1, 'last') + startIdx;
 %     stopIdx = find(10*log10(timeWinData(startIdx+1:end)) < 10*log10(noiseEst)+ dbAboveNoise, 1, 'first') + startIdx;
 
@@ -143,9 +143,9 @@ for iChannel = 1:nChannels
         continue;
     end
     
-    % 4) preliminary crosspoit
+    % 4) preliminary crossing point
     crossingPoint = (10*log10(noiseEst) - c(1)) / c(2);
-    if crossingPoint > input.trackLength + timeShifted(iChannel)
+    if crossingPoint > (input.trackLength + timeShifted(iChannel))  * 2 
         continue
     end
     
@@ -156,7 +156,7 @@ for iChannel = 1:nChannels
     % 6) average
     timeWinData = squeeze(sum(reshape(rawTimeData(1:floor(nSamples(iChannel)/nSamplesPerBlock)*nSamplesPerBlock,iChannel), nSamplesPerBlock,floor(nSamples(iChannel)/nSamplesPerBlock) ,1),1)).'/nSamplesPerBlock;
     timeVecWin = (0:size(timeWinData,1)-1).'*nSamplesPerBlock/input.samplingRate;
-    [del idxMax] = max(timeWinData);
+    [del, idxMax] = max(timeWinData);
     
     
     oldCrossingPoint = 11+crossingPoint; % high start value to enter while-loop

@@ -8,7 +8,7 @@ function test_ita_fileIO()
 warning('test_ita_fileIO: Lots of comments here, please check me!')
 sr     = 44100;
 fftdeg = 14;
-a      = ita_generate('linsweep',[200 10000],sr,fftdeg);
+a      = ita_generate_sweep('mode','lin','freqRange',[2 22000],'samplingRate',44100,'fftDegree',15);
 
 %% test dat
 nBits = [16 24 32];
@@ -47,9 +47,9 @@ function res = ita_issimilar(a,b)
 
 sArgs   = struct('pos1_a','itaAudioTime','pos2_b','itaAudioTime');
 
-[a,b,sArgs] = ita_parse_arguments(sArgs,{a,b}); %#ok<NASGU>
+[a,b,sArgs] = ita_parse_arguments(sArgs,{a,b});  %#ok<ASGLU>
 
-c_a = a-b; %#ok<NASGU> %see if everything is okay, check is inside;
+c_a = a-b; % %see if everything is okay, check is inside;
 c   = a.dat - b.dat; %just do it, without checking
 res = sum(c.^2)/c_a.nSamples < 1e-7;
 if res == 0

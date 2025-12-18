@@ -27,7 +27,7 @@ if nargin == 0 % generate GUI
     ele = 1;
     pList{ele}.description = 'First itaAudio';
     pList{ele}.helptext    = 'This is the first itaAudio for addition';
-    pList{ele}.datatype    = 'itaAudioInUse';
+    pList{ele}.datatype    = 'itaAudio';
     pList{ele}.default     = '';
     
     ele = 2;
@@ -58,11 +58,11 @@ if nargin == 0 % generate GUI
 end
 
 %%
-error(nargchk(2,2,nargin,'string'));
+narginchk(2,2);
 % Find Audio Data
 
 sArgs   = struct('pos1_a','itaSuper','pos2_b','anything');
-[a,b,sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[a,b,sArgs] = ita_parse_arguments(sArgs,varargin); 
 
 result = a - b;
 %% Find output parameters

@@ -21,9 +21,9 @@ function varargout = ita_zerophase(varargin)
 
 
 %% Initialization
-error(nargchk(1,1,nargin));
+narginchk(1,1); 
 sArgs   = struct('pos1_num','itaAudioFrequency');
-[result, sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<NASGU>
+[result, sArgs] = ita_parse_arguments(sArgs,varargin); %#ok<ASGLU>
 
 %% Body
 result.freq = abs(result.freq);

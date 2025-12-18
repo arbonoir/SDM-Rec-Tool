@@ -36,7 +36,7 @@ function varargout = ita_measurement_trigger(varargin)
 thisFuncStr  = [upper(mfilename) ':'];     % Use to show warnings or infos in this functions
 
 %% Initialization and Input Parsing
-error(nargchk(0,23,nargin,'string'));
+narginchk(0,23);
 
 %% GUI
 if nargin == 0
@@ -127,7 +127,7 @@ end
 
 % Find devices
 recDeviceID = ita_preferences('recDeviceID');
-[recDeviceName recDeviceInfo] = ita_portaudio_deviceID2string(recDeviceID); %#ok<ASGLU>
+[recDeviceName, recDeviceInfo] = ita_portaudio_deviceID2string(recDeviceID); %#ok<ASGLU>
 if recDeviceID == -1 || isempty(recDeviceInfo)
     error('ITA_MEASUREMENT_TRIGGER: No rec device set, please call ita_preferences');
 end
@@ -227,7 +227,7 @@ for iAverage = 1:MS.averages  % loop through amount of measurements
                 sample_vec = lastSample + sample_idx(1) + (1:floor(MS.samplingRate)*sArgs.duration);
                 disp('The threshold is probably very low and the trigger was activated immediately');
             end
-            if max(sample_vec) > size(z,1);
+            if max(sample_vec) > size(z,1)
                 disp('Trigger event was really late. Returning all data recorded');
                 sample_vec = size(z,1) - sArgs.duration * MS.samplingRate;
             end
@@ -243,7 +243,7 @@ for iAverage = 1:MS.averages  % loop through amount of measurements
     
     if isempty(recordData)
         disp('No Trigger event found. Just returning the entire data')
-        recordData = hPlayRec('getRec',pageno).';
+        recordData = hPlayRec('getRec',pageno);
     end
     
     %% finished
@@ -269,11 +269,11 @@ for iAverage = 1:MS.averages  % loop through amount of measurements
     if any(all(recordData.time == 0)) && record
         disp('ITA_MEASUREMENT_TRIGGER:: There are empty channels in the audio signal! You''d better check your settings!');
     end
-    [channelvolumes index] = max(max(abs(recordData.time),[],1));
+    [channelvolumes, index] = max(max(abs(recordData.time),[],1));
     disp(['Maximum digital level: ' int2str(20*log10(channelvolumes)) ' dB on channel: ' int2str(in_channel_vec(index))]);
     
     %% Check if soundcard-settings are right
-    [recDeviceName recDeviceInfo] = ita_portaudio_deviceID2string(hPlayRec('getRecDevice'));
+    [recDeviceName, recDeviceInfo] = ita_portaudio_deviceID2string(hPlayRec('getRecDevice'));
     if recDeviceInfo.defaultSampleRate ~= MS.samplingRate
         if MS.samplingRate == hPlayRec('getSampleRate')
             ita_verbose_info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',1);

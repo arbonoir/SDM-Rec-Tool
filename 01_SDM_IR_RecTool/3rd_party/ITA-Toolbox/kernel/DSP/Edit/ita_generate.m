@@ -21,21 +21,10 @@ function varargout = ita_generate(varargin)
 %  Syntax: dat     = ita_generate('ComplexExp',a,tau,f0,phi,sr,fft_deg)
 %                    f = a*exp(-t/tau) * exp(j2pi t) * e(j phi)
 %
-%  Sweeps:
-%  Syntax: spk = ita_generate(sweeptype,freq_range,[stopmargin],sr,fft_degree)
-%         - sweeptype:  can be linsweep (linear) or expsweep/logsweep (exponentially swept sine)
-%         - freq_range: a vector with lower and upper frequency range [lower_freq upper_freq]
-%         - stopmargin: (is optional!) time in seconds for silence in the
-%                               end of the sweep
-%         - sr:         sampling rate in Hz, example: 44100
-%         - fft_degree: fft_degree for the signal. e.g. 20 for a long
-%                               sweep. 14 for a short sweep
+%  Sweeps: are handled by ita_generate_sweep
 %
-%    Examples:
-%     spk = ita_generate('expsweep',[2 22000],44100,18) exponentially swept sine [2Hz to 22000Hz]
-%     spk = ita_generate('linsweep',[2 22000],0.5,44100,18) stop margin 0.5sec
 %
-%   See also ita_spk2imp, ita_acc2vel, ita_spk2level, ita_time_shift.
+%   See also ita_generate_sweep, ita_time_shift.
 %
 %   Reference page in Help browser
 %        <a href="matlab:doc ita_generate">doc ita_generate</a>
@@ -54,7 +43,7 @@ function varargout = ita_generate(varargin)
 
 %% Initialization
 %Inarg checking
-error(nargchk(0,7,nargin,'string'));
+narginchk(0,7);
 thisFuncStr  = [upper(mfilename) ':'];
 
 %% Check if Toolbox Setup is up-to-date
@@ -330,7 +319,7 @@ else
                 error('see syntax')
             end
             if samplingRate < fftDegree
-                [samplingRate fftDegree] = deal(fftDegree, samplingRate); %Switch vars
+                [samplingRate, fftDegree] = deal(fftDegree, samplingRate); %Switch vars
             end
             audioObj   = ita_generate('flat',1,samplingRate,fftDegree+1); %do one more in here
             freq_vec = audioObj.freqVector;
@@ -382,143 +371,11 @@ else
             audioObj.channelNames{1} = ['ccxsweep ' num2str(f0) ' to ' num2str(f1)];
             audioObj.signalType = 'power';
             
-        case {'bleussweep'}
-            methodStr = 'exponential';
-            %% input parsing
-            if nargin == 4 %no stop margin and freqency vector
-                f0 = varargin{2}(1); 
-                f1 = varargin{2}(2); 
-                samplingRate = varargin{3}; 
-                [nSamples,fftDegree] = ita_nSamples(varargin{4});
-            elseif nargin == 5
-                if length(varargin{2}) == 2 %frequency vector
-                    f0 = varargin{2}(1); 
-                    f1 = varargin{2}(2); 
-                    stopMargin = varargin{3}; 
-                    samplingRate = varargin{4}; 
-                    [nSamples,fftDegree] = ita_nSamples(varargin{5});
-                else %frequency is given separately
-                    f0 = varargin{2}; 
-                    f1 = varargin{3}; 
-                    samplingRate = varargin{4}; 
-                    [nSamples,fftDegree] = ita_nSamples(varargin{5});
-                end
-            elseif nargin == 6
-                f0 = varargin{2};
-                f1 = varargin{3};
-                stopMargin = varargin{4};
-                samplingRate = varargin{5};
-                [nSamples,fftDegree] = ita_nSamples(varargin{6});
-            else
-                error('ITA_GENERATE:Please see syntax.')
-            end
-            
-            if fftDegree > samplingRate
-                [fftDegree, samplingRate] = deal(samplingRate,fftDegree);
-            end
-            if exist('stopMargin','var')
-                nSamples = nSamples - round(stopMargin.*samplingRate./2)*2;
-                if nSamples <= 0;
-                    error(['ITA_GENERATE:Stop margin is too long. Maximum is ' num2str(2.^fftDegree ./ samplingRate) '.'])
-                end
-            end
-            
-            t = (1:nSamples-1)./samplingRate;
-            t1  = nSamples./samplingRate;
-            phi = 0;
-            if f0 <= 1e-6
-                ita_verbose_info('ITA_GENERATE:The lowest frequency has to be greater than 1e-6',1);
-                f0 = 1e-6;
-            end
-            methodStr4chirp = 'logarithmic';
-            audioObj.timeData    = chirp(t,f0,t1,f1,methodStr4chirp,phi).';
-            
-            audioObj.comment = [ methodStr ' Sweep ' num2str(f0) ' to ' num2str(f1) 'Hz'];
-            audioObj.channelNames{1} = audioObj.comment;
-            audioObj.channelUnits{1} = '';
-            audioObj.samplingRate = samplingRate;
-            audioObj = ita_extend_dat(audioObj,fftDegree); %get the full length signal as requested
-            audioObj = ita_metainfo_rm_historyline(audioObj,'all');
-            audioObj.signalType = 'power';
-            
-        case {'sweep','linsweep','logsweep','expsweep'}
-            switch lower(signal_type)
-                case {'sweep','linsweep'}
-                    methodStr = 'linear';
-                case {'logsweep','expsweep'}
-                    methodStr = 'exponential';
-            end
-            if nargin == 4 %no stop margin and freqency vector
-                f0 = varargin{2}(1); 
-                f1 = varargin{2}(2); 
-                samplingRate = varargin{3}; 
-                [nSamples,fftDegree] = ita_nSamples(varargin{4});
-            elseif nargin == 5
-                if length(varargin{2}) == 2 %frequency vector
-                    f0 = varargin{2}(1); 
-                    f1 = varargin{2}(2); 
-                    stopMargin = varargin{3}; 
-                    samplingRate = varargin{4}; 
-                    [nSamples,fftDegree] = ita_nSamples(varargin{5});
-                else %frequency is given separately
-                    f0 = varargin{2}; 
-                    f1 = varargin{3}; 
-                    samplingRate = varargin{4}; 
-                    [nSamples,fftDegree] = ita_nSamples(varargin{5});
-                end
-            elseif nargin == 6
-                f0 = varargin{2};
-                f1 = varargin{3};
-                stopMargin = varargin{4};
-                samplingRate = varargin{5};
-                [nSamples,fftDegree] = ita_nSamples(varargin{6});
-            else
-                error('ITA_GENERATE:Please see syntax.')
-            end
-            if (fftDegree > 35) && (samplingRate > 35)
-                fftDegree = log2(fftDegree);
-            else
-                if fftDegree > samplingRate
-                    [fftDegree, samplingRate] = deal(samplingRate,fftDegree);
-                end
-            end
-            if exist('stopMargin','var')
-                nSamples = nSamples - round(stopMargin.*samplingRate./2)*2;
-                if nSamples <= 0;
-                    error(['ITA_GENERATE:Stop margin is too long. Maximum is ' num2str(2.^fftDegree ./ samplingRate) '.'])
-                end
-            end
-            
-            t = (1:nSamples-1)./samplingRate;
-            t1  = nSamples./samplingRate;
-            phi = -90; %does not work
-            if f0 <= 1e-6
-                ita_verbose_info('ITA_GENERATE:The lowest frequency has to be greater than 1e-6',1);
-                f0 = 1e-6;
-            end
-            if strcmp(methodStr,'exponential') ; %the matlab chirp function needs 'logarithmic'
-                methodStr4chirp = 'logarithmic';
-            else
-                methodStr4chirp = methodStr;
-            end;
-            audioObj.timeData    = chirp(t,f0,t1,f1,methodStr4chirp,phi).';
-            
-            audioObj.comment = [ methodStr ' Sweep ' num2str(f0) ' to ' num2str(f1) 'Hz'];
-            audioObj.channelNames{1} = audioObj.comment;
-            audioObj.channelUnits{1} = '';
-            %smooth the beginning and the end
-            %             audioObj = ita_time_window(audioObj,[1000, 1,  nSamples-1000, nSamples],'samples');
-            %             audioObj = ita_time_window(audioObj,[1000, 1],'samples');
-            audioObj.samplingRate = samplingRate;
-            audioObj = ita_extend_dat(audioObj,fftDegree); %get the full length signal as requested
-            audioObj = ita_metainfo_rm_historyline(audioObj,'all');
-            audioObj.signalType = 'power';
-            
         case {'swenlinsweep'}
             if ~isempty(varargin{5})
-                N = varargin{5};
+                fftDegree = varargin{5};
             else
-                N = 18;
+                fftDegree = 18;
             end
             if ~isempty(varargin{4})
                 fs = varargin{4};
@@ -532,7 +389,7 @@ else
                 % length in seconds of silence in end of sweep
             end
             
-            a = ita_generate('flat',1,fs,N);
+            a = ita_generate('flat',1,fs,fftDegree);
             
             gd_0 = .03;         % time in seconds when sweep starts
             gd_end = a.trackLength - stopMargin;
@@ -540,7 +397,7 @@ else
                 error('Stop margin is too big');
             end
             
-            a = ita_generate('flat',1,fs,N+1);
+            a = ita_generate('flat',1,fs,fftDegree+1);
             
             k = (gd_end - gd_0)/a.nBins;
             gd = (gd_0 + k*(0:a.nBins-1));
@@ -562,99 +419,8 @@ else
             a = ita_extract_dat(a);
             a = ita_normalize_dat(a);
             audioObj = ita_metainfo_rm_historyline(a,'all');
-            audioObj.signalType = 'power';
-            
-        case {'linsweep*','expsweep*'}
-            %pdi: new sweep generation, both linear and exponential sweeps
-            %are generated by going from f_low/sqrt(2) till f_high*sqrt(2).
-            %Then, a zerophase bandpass is applied to allow a smooth
-            %frequency response.
-            switch lower(signal_type)
-                case {'linsweep*'}
-                    methodStr = 'linear';
-                case {'expsweep*'}
-                    methodStr = 'exponential';
-            end
-            if nargin == 4 %no stop margin and freqency vector
-                f0 = varargin{2}(1);
-                f1 = varargin{2}(2); 
-                samplingRate = varargin{3}; 
-                [nSamples,fftDegree] = ita_nSamples(varargin{4});
-            elseif nargin == 5
-                if length(varargin{2}) == 2 %frequency vector
-                    f0 = varargin{2}(1); 
-                    f1 = varargin{2}(2); 
-                    stopMargin = varargin{3}; 
-                    samplingRate = varargin{4}; 
-                    [nSamples,fftDegree] = ita_nSamples(varargin{5});
-                else %frequency is given separately
-                    f0 = varargin{2};
-                    f1 = varargin{3};
-                    samplingRate = varargin{4}; 
-                    [nSamples,fftDegree] = ita_nSamples(varargin{5});
-                end
-            elseif nargin == 6
-                f0 = varargin{2};
-                f1 = varargin{3}; 
-                stopMargin = varargin{4}; 
-                samplingRate = varargin{5}; 
-                [nSamples,fftDegree] = ita_nSamples(varargin{6});
-            else
-                error('ITA_GENERATE:Please see syntax.')
-            end
-            
-            nSamples_final = nSamples;
-            if exist('stopMargin','var')
-                tmpSamples = nSamples;
-                nSamples = tmpSamples - round(stopMargin.*samplingRate./2)*2;
-                if nSamples <= 0;
-                    error(['ITA_GENERATE:Stop margin is too long. Maximum is ' num2str(tmpSamples/samplingRate) '.'])
-                end
-            end
-            t = (1:nSamples-1)./samplingRate;
-            t1  = (nSamples-1)./samplingRate;
-            phi = 0;% -90; does not work
-            if f0 <= 1e-6
-                ita_verbose_info('ITA_GENERATE:The lowest frequency has to be greater than 1e-6',1);
-                f0 = 1e-6 * sqrt(2); %bma
-            end
-            if strcmp(methodStr,'exponential')
-                methodStr4chirp = 'logarithmic';
-            else
-                methodStr4chirp = methodStr;
-            end
-            audioObj.timeData           = chirp(t,f0/sqrt(2),t1,min(f1*sqrt(2),samplingRate/2),methodStr4chirp,phi).';
-            audioObj.samplingRate       = samplingRate;
-            audioObj.comment            = [ methodStr ' Sweep ' num2str(f0) ' to ' num2str(f1) 'Hz'];
-            audioObj.channelNames{1}    = audioObj.comment;
-            audioObj.channelUnits{1}    = '';
-            
-            %smooth beginning - first time
-            fade_samples    = round(min(max(1/f0*samplingRate,600),0.1*audioObj.nSamples));
-            audioObj        = ita_time_window(audioObj,[fade_samples, 1],'samples');
-            
-            % CAREFUL smoothing in the end
-            high_fade_sample_vec    = [-round(100*samplingRate/f1 + 2), 0]+audioObj.nSamples;
-            audioObj                = ita_time_window(audioObj,high_fade_sample_vec,'samples');
-            
-            %extending to double size
-            audioObj = ita_extend_dat(audioObj,nSamples_final*2); %get the full length signal as requested
-            
-            if f1 > samplingRate/2
-                f1_final = 0;
-            else
-                f1_final = max(min(f1*sqrt(2),samplingRate/2*0.95),f1);
-            end
-            audioObj = ita_mpb_filter(audioObj,[f0/sqrt(2) f1_final],'zerophase','order',14);
-            %use double file size instead of windowing last part of sweep
-            audioObj = ita_extract_dat(audioObj,nSamples_final);
-            %smooth beginning
-            audioObj = ita_time_window(audioObj,[fade_samples, 1],'samples');
-            audioObj = ita_normalize_dat(audioObj);
-            %smooth ending after filtering
-            audioObj = ita_time_window(audioObj,high_fade_sample_vec,'samples');
-            audioObj.signalType = 'power';
-            
+            audioObj.signalType = 'power';    
+           
         case{'complextone'}
             if nargin > 6
                 error('ITA_GENERATE:Please see syntax.')

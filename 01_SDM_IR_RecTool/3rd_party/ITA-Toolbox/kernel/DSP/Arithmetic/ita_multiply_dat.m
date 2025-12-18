@@ -30,7 +30,7 @@ if nargin == 0 % generate GUI
     ele = 1;
     pList{ele}.description = 'First itaAudio';
     pList{ele}.helptext    = 'This is the first itaAudio';
-    pList{ele}.datatype    = 'itaAudioInUse';
+    pList{ele}.datatype    = 'itaAudio';
     pList{ele}.default     = '';
     
     ele = 2;
@@ -60,7 +60,7 @@ if nargin == 0 % generate GUI
     return;
 end
 
-error(nargchk(2,2,nargin));
+narginchk(2,2);
 
 sArgs   = struct('pos1_num','itaSuper','pos2_den','anything');
 sArgs   = ita_parse_arguments(sArgs,varargin);
