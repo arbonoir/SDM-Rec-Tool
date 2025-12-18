@@ -38,33 +38,9 @@ irs.author = 'Stephan';   % name of measuring person
 irs.room   = 'VRLab';           % name of room
 irs.info  = 'VRLab';              % type of measurement
 irs.speakerType = 'RL906';      % type of speaker
-irs.position = 'P9';     % P1 is closest at 1.25 m/ P2 is 1.5m
+irs.position = 'P1';     % P1 is closest at 1.25 m/ P2 is 1.5m
 
-
-
-
-
-irs.micPos = [-3.25 0 1.66];           % microphone position (x,y,z) in the grid in [m]
-
-
-%irs.micPos = [1.87 0.35 1.20]; %1
-%irs.micPos = [1.87 2.61 1.20]; %2
-%irs.micPos = [1.87 5.00 1.20]; %3
-
-%irs.micPos = [3.11 0.35 1.20]; %4
-%irs.micPos = [3.11 2.61 1.20]; %5
-%irs.micPos = [3.11 5.00 1.20]; %6
-
-%irs.micPos = [5.50 0.35 1.20]; %7
-%irs.micPos = [5.50 2.61 1.20]; %8
-%irs.micPos = [5.50 5.00 1.20]; %9
-
-%irs.micPos = [7.24 0.35 1.20]; %10
-%irs.micPos = [7.24 2.61 1.20]; %11
-%irs.micPos = [7.24 5.00 1.20]; %12
-
-
-
+irs.micPos = [0 0 0];           % microphone position (x,y,z) in the grid in [m]
 
 irs.micAzEl = [0 0];         % mircophone direction of view offset in degree
 
@@ -77,32 +53,16 @@ irs.micAzEl = [0 0];         % mircophone direction of view offset in degree
 %                   0 0.7071 -0.7071;
 %                   0 0 0]*0.1/2;
 
-%irs.gridOffXYZ = [0 0 0];       % grid offset in the room (x y z) in [m]
-%irs.gridOffAzEl = [0 0];        % grid azimuth and elevation offset in degree
 
+nSpeaker = 1;  % num of speakers
 
-nSpeaker = 2;  % num of speakers
+irs.speakerNames = { 'Front'};                
 
-irs.speakerNames = { 'Front'...
-                    ,'Side'...
-                    };
-                
-% speaker positions (x,y,z) in the grid in [m]
-irs.speakerPos =   { [  0.0    0.0    1.66   ]...
-                    ,[	0.0    -1.25    1.66  ]...
-%                    ,[	5.90    5.68    1.20   ]...
-%                    ,[  1.84    0.95    1.20   ]...
-%                    ,[  0.00    0.00    0.00   ]...
-                    };
+irs.speakerPos =   { [  0.0    0.0    1.66   ]};
                 
 % speaker azimuth and elevation in degree (in referenz to the grid)
 
-irs.speakerAzEl =   { [ 0.00   0.00    ]...
-                    ,[ 90.00   0.00    ]...
-%                     ,[ 340.00   0.00    ]...
-%                     ,[ 10.00   0.00    ]...
-%                     ,[ 70     0.00    ]...
-                    };
+irs.speakerAzEl =   { [ 0.00   0.00    ]};
 
 
 %% Initial parameters
@@ -110,7 +70,7 @@ irs.fs = 48000;    % sampling rate
 
 irs.sweepLoudness   = 0.25; %Loudness factor
 
-countdown = 5; % you need time to leave the room? in [s] 
+countdown = 0; % you need time to leave the room? in [s] 
 
 nChannels = 7; % num of microphones
 
