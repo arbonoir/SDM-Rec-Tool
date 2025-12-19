@@ -26,51 +26,40 @@ Output = '../data/RIRs/';
 calc_IR = 1; %calculat Impulsrespons
 flip_phase_measurment_mic = 1; %Kanal 7 (Messmikro) mit -1 multiplizieren;
 
-%f_gain = [5.899974163771157,5.960146874493056,3.669551814562449,4.178224276367109,3.710109648676412,5.230395430311390,1]; %Messung RMS von IR
-    
-% Zu Beginn einer Messung Nullpunkt definieren und immer
-% Lautsprecherposition, Mikrofonposition und die jeweiligen Orientierung
-% auf diesen beziehen
-
 tic
 %% Meta-data 
-irs.author = 'Stephan';   % name of measuring person
+irs.author = {'Arghadip' , 'Soumen'};   % name of measuring person
 irs.room   = 'VRLab';           % name of room
 irs.info  = 'VRLab';              % type of measurement
 irs.speakerType = 'RL906';      % type of speaker
-irs.position = 'P1';     % P1 is closest at 1.25 m/ P2 is 1.5m
-
-irs.micPos = [0 0 0];           % microphone position (x,y,z) in the grid in [m]
-
-irs.micAzEl = [0 0];         % mircophone direction of view offset in degree
-
-
-%irs.micCapsPos = [ 1 0 0;              %position of microphone  for micOffAzEl = [0 0]
-%                   0 -0.7071 -0.7071;
-%                   0 -0.7071 0.7071;
-%                  -1 0 0;
-%                   0 0.7071 0.7071;
-%                   0 0.7071 -0.7071;
-%                   0 0 0]*0.1/2;
-
-
+irs.position = 'P1';     % P1 is at 3.0 m
+irs.micPos = [0 0 1.3];           % microphone position (x,y,z) in the grid in [m
+irs.micAzEl = [0 315];         % mircophone direction of view offset in degree
+irs.info = 'P1_R315';
 nSpeaker = 1;  % num of speakers
 
-irs.speakerNames = { 'Front'};                
+irs.speakerNames = { 'Front'...
+%                    ,'Side'...
+                    };
+                
+% speaker positions (x,y,z) in the grid in [m]
+irs.speakerPos =   { [  3.0    0.0    1.3   ]...
 
-irs.speakerPos =   { [  0.0    0.0    1.66   ]};
+                    };
                 
 % speaker azimuth and elevation in degree (in referenz to the grid)
 
-irs.speakerAzEl =   { [ 0.00   0.00    ]};
+irs.speakerAzEl =   { [ 0.00   0.00    ]...
+
+                    };
 
 
 %% Initial parameters
 irs.fs = 48000;    % sampling rate 
 
-irs.sweepLoudness   = 0.25; %Loudness factor
+irs.sweepLoudness   = 0.025; %Loudness factor
 
-countdown = 0; % you need time to leave the room? in [s] 
+countdown = 1; % you need time to leave the room? in [s] 
 
 nChannels = 7; % num of microphones
 
@@ -78,8 +67,8 @@ nChannels = 7; % num of microphones
 % more info on available auzdio devices:    playrec('getDevices');
 deviceID.out = 0; 
 deviceID.in  = 0;
-channels.in  = [1:nChannels]; %<--- Microphone Channels
-channels.out = [1:nSpeaker];  %<--- Speaker Channels
+channels.in  = (1:nChannels); %<--- Microphone Channels
+channels.out = (1:nSpeaker);  %<--- Speaker Channels
 
 nRecordingChannels = length(channels.in);
 
